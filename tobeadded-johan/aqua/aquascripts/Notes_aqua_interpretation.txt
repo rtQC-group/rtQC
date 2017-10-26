@@ -1,0 +1,21 @@
+Notes on interpretation of Quality Assurance using aqua.m
+
+Standardized and routinely carried out QA is essential for extensive data amounts as collected in fMRI, especially in multicenter studies. Furthermore, for the comparison of two different groups, it is important to ensure that data quality is approximately equal to avoid possible misinterpretations.
+All quality assessment parameters defined here are given in terms of the PSC, which we believe to be a most instructive measure because in some cases it even allows direct interpretation of whether a temporal signal change is blood oxygenation level-dependent (BOLD) induced. A temporally localized PSC that exceeds 5%, for example, can hardly be ex- plained by the BOLD effect [Thulborn, 2002].
+--> PSC should be stable and < 5
+
+For in vivo measurements, the mask usually contained the eyes of the subject, which are generally a source of strong signal variations in the EPI time series. For the QA procedure, it is thus useful to apply eye masking because these variations should not enter the QA calculation.
+--> apply eye masking
+
+The correlation coefficient serves as a single quantity describing the difference of the distribution of the data to the normal distribution. The inspection of automatically generated processing results, most importantly from the PSC time series, gives valuable information about corrupted scans and slices. The overall data quality is described by the single quantity rqq, which is calculated based on baseline scans of the fMRI experiment. As rqq is sensitive to changes near the mean of the estimated probability distribution of the data, it is re- lated closely to Student’s t-test, the method of choice in fMRI data analysis (SPM2).
+--> r_qq needs to be high
+
+
+Spikes, which are visible in PSC plot, do not necessarily occur in Realignment plot and vice versa. Only the PSC gives valuable information about the corrupted scans.
+PSC is well suited to detect single corrupted scans.
+
+To compare sites, a plot with all PSC values and acquisition time is a good idea.
+
+To establish whether the high noise level was purely random or if artifacts were present, the statistical properties of the noise were investigated. Figure 7 depicts the results for the three different kinds of distribution-type similarity measures: the Kolmogorov– Smirnov distance, DKS; the q–q plot correlation coefficient, rqq, and the Anderson–Darling distance, DAD. DKS and rqq are highly correlated, because both measures are sensitive to changes near the mean of the distribution, whereas DAD is more sensitive to changes in the tails. Spike artifacts, which spread out all over the volume of some selected scans and slices, are detected better with DKS or rqq. Artifacts that occur only in a very limited number of voxels but with strong signal change are better detected with DAD.
+
+Neglecting data sets with high PSC (low rqq) might strengthen the inference of results; however, it is important that the parameters do not vary strongly across two different groups in a group comparison or patient study.

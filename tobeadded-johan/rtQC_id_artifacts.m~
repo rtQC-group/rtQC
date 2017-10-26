@@ -1,0 +1,48 @@
+% rtQC_id_artifacts
+% Identifies artifacts based on AQUA metrics by comparing each volume to reference data (e.g. the preceding volumes or volumes from a reference/good acquisition using the same sequence). Can get rid of spikes and weird volumes. It can also provide metrics of overall data quality, decomposed into movement metrics, signal metrics …
+% Current developers: Joha
+
+
+
+% Function name: rtQC_xtc2nii
+% 
+% Description: This function converts data acquired from the Philips XTC real-time export module (PAR/REC files) to Nifti format.
+% 
+% Usage: rtNII_volume = rtQC_xtc2nii(xtc_ParRec_volume, template_volume)
+% 
+% Arguments, inputs and outputs:
+% 
+% xtc_ParRec_volume ~ Realtime volume dumped by XTC in Par/Rec format
+% 
+% template_volume ~ a volume acquired using the same scanning sequence that is used as reference to complete missing header attributes
+% 
+% rtNII_volume ~ typical nii file you can readily use in SPM or other software, corresponding exactly to what you would have gotten if you had exported the data offline into dicom and then converted it to nii using dcm2nii from MRIcro.
+% 
+% Special notes: not applicable
+% 
+% Dependencies: dcm2nii from MRIcro
+% 
+% Contributors: Stavros
+
+
+
+
+
+% Example 2: Adding a field to the rtQC structure
+
+% Field name: rtQC.rtData
+
+% Description: This field holds the raw real-time data in a 4D matrix. The 1st dimension is X, the 2nd is Y, the 3rd is Z and the 4th is time, according to the “SPM NIfTI voxel space”.
+
+% Modifiable by: This field can be modified by the following functions: rtQC_xtc2nii ; rtQC_read_data ….
+
+% Special notes: not applicable
+
+
+
+
+
+% so -- for this function things will be: 
+
+% Usage: rtQC.id_artifacts_assessment = rtQC_id_artifacts(rtQC.rtData);
+

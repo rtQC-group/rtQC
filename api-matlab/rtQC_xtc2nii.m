@@ -1,3 +1,5 @@
+
+
 Function name: rtQC_xtc2nii
 
 Description: This function converts data acquired from the Philips XTC real-time export module (PAR/REC files) to Nifti format.
@@ -18,3 +20,10 @@ Dependencies: dcm2nii from MRIcro
 
 Contributors: Stavros
 
+
+
+%% ability to compare stuff --
+
+% some history tracking in rtqc structure
+% 
+% 

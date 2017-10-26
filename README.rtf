@@ -1,6 +1,7 @@
 {\rtf1\ansi\ansicpg1252\cocoartf1348\cocoasubrtf170
-{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 HelveticaNeue;\f2\fnil\fcharset0 AndaleMono;
+}
+{\colortbl;\red255\green255\blue255;\red47\green255\blue18;\red180\green36\blue25;}
 \paperw11900\paperh16840\margl1440\margr1440\vieww20140\viewh12920\viewkind0
 \pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
 
@@ -21,4 +22,163 @@ Github working rules for potential other collaborators:\
 - one of us will set them as collaborator but they won\'92t have management access\
 - everyone can fork and develop But for merging with the master-master, it will require a pull-request\
 \
-I AM GOING TO ADD STEP-BY-STEP instructions here}
+\
+Github step-by-step instructions\
+\pard\pardeftab720\sl320
+
+\f1\b \cf0 \expnd0\expndtw0\kerning0
+\ul \ulc0 1 visit {\field{\*\fldinst{HYPERLINK "https://github.com/lydiatgit/rtQC-playground"}}{\fldrslt https://github.com/lydiatgit/rtQC-playground}}\
+2. press fork on the top right of your screen. Choose to fork on your personal account e.g. @YourGithubUsername\
+3. Go to your repositories e.g. {\field{\*\fldinst{HYPERLINK "https://github.com/Metasoliton?tab=repositories"}}{\fldrslt https://github.com/YourGithubUsername?tab=repositories}} and click on the rtQC-playground repository. Copy the URL.\
+4. Open a terminal on a Linux or Mac computer. Choose a location on your local drive to store the project. Think carefully and picka good location you don\'92t have to change later. Create a folder called Development. Navigate inside that folder, e.g. cd /Users/Stav/Documents/MC/rtQC_collaboration/Development\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 cd /Users/Stav/Documents/MC/rtQC_collaboration/Development
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+\
+\
+\pard\pardeftab720\sl320
+\cf0 5. git clone https://github.com/Metasoliton/rtQC-playground\
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 git clone https://github.com/Metasoliton/rtQC-playground\
+
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+6. specify that this repository is to be sent back to the master repository that it was forked from, so that you can contribute your changes to the rtQC project\
+(remote hub is defined as mastermaster)\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0  git remote add mastermaster https://github.com/lydiatgit/rtQC-playground\
+\pard\pardeftab720\sl320
+
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+This will prompt you for your Github username and password\
+e.g.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 Cruncher02:Development Stav$ git clone https://github.com/Metasoliton/rtQC-playground\
+Cloning into 'rtQC-playground'...\
+Username for 'https://github.com': YourGithubYousername\
+Password for 'https://Metasoliton@github.com': YourGithubPassword  \
+remote: Counting objects: 14, done.\
+remote: Compressing objects: 100% (12/12), done.\
+remote: Total 14 (delta 4), reused 12 (delta 2), pack-reused 0\
+Unpacking objects: 100% (14/14), done.\
+Cruncher02:Development Stav$ \
+\pard\pardeftab720\sl320
+
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+Now you have a local copy of the forked repository.\
+\
+6. Make any changes you wish for in the repository. Preferably add some new function according to the format and conventions specified here: link to Developer\'92s notes\
+7. From a temrinal go inside the folder of the local copy of the repository e.g. \
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 cd /Users/Stav/Documents/MC/rtQC_collaboration/Development/rtQC-playground\
+
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+8. \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 Cruncher02:rtQC-playground Stav$ git status\
+On branch master\
+Your branch is up-to-date with 'origin/master'.\
+Changes not staged for commit:\
+  (use "git add <file>..." to update what will be committed)\
+  (use "git checkout -- <file>..." to discard changes in working directory)\
+\
+	\cf3 modified:   README.rtf\cf2 \
+\
+no changes added to commit (use "git add" and/or "git commit -a")
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+\pard\pardeftab720\sl320
+\cf0 \
+9. git commit -am \'93message describing the changes you made: e.g. edited the ReadMe.txt file\'94 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 Cruncher02:rtQC-playground Stav$ git commit -am "message describing the changes you made: e.g. edited the ReadMe.txt file" \
+[master a198bc8] message describing the changes you made: e.g. edited the ReadMe.txt file\
+ 1 file changed, 4 insertions(+), 2 deletions(-)\
+Cruncher02:rtQC-playground Stav$ \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+\pard\pardeftab720\sl320
+\cf0 (note: -m specifies the message. -a stands for all. The alternative would be to specify only the filename of the file changed)\
+\
+10. \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 Cruncher02:rtQC-playground Stav$ git push \
+Username for 'https://github.com': Metasoliton\
+Password for 'https://Metasoliton@github.com': \
+Counting objects: 3, done.\
+Delta compression using up to 8 threads.\
+Compressing objects: 100% (3/3), done.\
+Writing objects: 100% (3/3), 404 bytes | 0 bytes/s, done.\
+Total 3 (delta 2), reused 0 (delta 0)\
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.\
+To https://github.com/Metasoliton/rtQC-playground\
+   52470b3..a198bc8  master -> master\
+Cruncher02:rtQC-playground Stav$ 
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+\pard\pardeftab720\sl320
+\cf0 \
+Now the local copies on your computer and on your github  are in synch\
+\
+11. Pull from master repository to your local in order to check for conflicts that may have occured due to changes from other programmers\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 git pull mastermaster master
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+\pard\pardeftab720\sl320
+\cf0 This will open a kind of editor mode where you can enter an additional message. \
+press \'93:wq\'94 and then enter\
+this will generate an automatic default message and copy any changes made by others to your local copy on your computer\
+\
+\
+\
+12. Push your most recent version to your local copy on github\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 Cruncher02:rtQC-playground Stav$ git push origin master\
+Username for 'https://github.com': Metasoliton\
+Password for 'https://Metasoliton@github.com': \
+Counting objects: 62, done.\
+Delta compression using up to 8 threads.\
+Compressing objects: 100% (59/59), done.\
+Writing objects: 100% (62/62), 582.07 KiB | 0 bytes/s, done.\
+Total 62 (delta 22), reused 0 (delta 0)\
+remote: Resolving deltas: 100% (22/22), done.\
+To https://github.com/Metasoliton/rtQC-playground\
+   a198bc8..c7fa89e  master -> master\
+Cruncher02:rtQC-playground Stav$ 
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+\pard\pardeftab720\sl320
+\cf0 \
+\
+[26/10/2017 12:12:15] Johan van der Meer: this will push your local version to your github repo\
+your local computer repository is called master\
+origin is (the one you cloned from), in this case your github local repository \
+This is important to keep track of things in the longrun.\
+\
+13. 
+\f2\b0\fs32 \cf2 \cb0 \kerning1\expnd0\expndtw0 \ulnone \CocoaLigature0 git push mastermaster master
+\f1\b\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\ul \ulc0 \CocoaLigature1 \
+git push mastermaster master\
+push your local version to the central repository it all started from\
+\
+\
+\
+\
+}

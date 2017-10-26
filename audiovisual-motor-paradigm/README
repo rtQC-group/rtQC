@@ -1,0 +1,9 @@
+#Section 4
+
+Audiovisual and motor paradigm
+
+The paradigm serves to provide a reference for all real-time experiments by performing the double role of:
+
+a) allowing to validate any lab/scanner setup. By using the paradigm to acquire real-time data in any lab and apply one of the standard procedures (e.g. BAX), one can ensure that everything works as expected with regards to the data acquisition. This is accomplished by comparing the results of the acquisition(s) with the reference results of our paper (also available in Matlab variables downloadable with the toolbox). This comparison is automated via the function rtQC_validate_acquisition
+
+b) allowing to validate the real-time analysis procedure of any lab/researcher. By applying any given analysis procedure to the example data from our task (which will be downloadable with the toolbox) a comparison of the performance of the analysis procedure will be possible, with reference to the other available/standard analyses (e.g. BAX; see Box 2 & Figure 3 from the paper draft). This comparison is automated via the function rtQC_validate_analysis

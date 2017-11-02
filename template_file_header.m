@@ -17,4 +17,14 @@
 %
 % Author: XXX, <XXX@uni.xx>, 2017
 %
+% Function rtQC_XXX
+%
+% Description:
+%   Performs .......
+%   
+%
+% Parameters:
+%
+% Returns:
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

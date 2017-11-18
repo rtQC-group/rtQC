@@ -44,6 +44,8 @@ xtc_ParRec_volume ~ Realtime volume dumped by XTC in Par/Rec format
 
 template_volume ~ a volume acquired using the same scanning sequence that 
 is used as reference to complete missing header attributes
+This can be accomplished using the function rtQC_xtc_QA in advance; e.g.
+template_hdr = rtQC_xtc_QA(xtcDir,dcmDir,niixDir,ExpCode,SubCode,nVolumes,nSlices)
 
 rtNII_volume ~ typical nii file you can readily use in SPM or other 
 software, corresponding exactly to what you would have gotten if you had 

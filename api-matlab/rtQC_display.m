@@ -54,7 +54,7 @@ gui_data.pb_stopRT.Callback = @stopRT;
 gui_data.popup_setDim.Callback = @setDim;
 gui_data.sld_slice.Callback = @changeSlice;
 gui_data.popup_setImg.Callback = @setImg;
-
+set(findall(fig, '-property', 'Interruptible'), 'Interruptible', 'on')
 
 % Make figure visible after normalizing units
 set(findall(fig, '-property', 'Units'), 'Units', 'Normalized')
@@ -172,8 +172,8 @@ gui_data.MPall = cell(1,6);
 for p = 1:6
     gui_data.MPall{p} =  gui_data.MP1;
 end
-gui_data.FD = zeros(gui_data.Nt,1);
-gui_data.DVARS = zeros(1,gui_data.Nt);
+gui_data.FD = nan(gui_data.Nt,1);
+gui_data.DVARS = nan(1,gui_data.Nt);
 gui_data.T = zeros(gui_data.Nt,8); % Timing vector: realignment, FD, DVARS, smoothing, detrending, PSC, draw stuff, total
 
 
@@ -227,12 +227,16 @@ gui_data.F_dyn = zeros(gui_data.N_vox, gui_data.Nt);
 gui_data.F_dyn_img = zeros(gui_data.Ni, gui_data.Nj, gui_data.Nk);
 gui_data.F_dyn_detrended = zeros(gui_data.N_vox, gui_data.Nt);
 gui_data.F_perc_signal_change = zeros(gui_data.N_vox, gui_data.Nt);
-gui_data.F_theplot = zeros(gui_data.N_vox, gui_data.Nt+5);
+gui_data.F_theplot = zeros(gui_data.N_vox, gui_data.Nt+1);
 gui_data.F_cumulative_mean = zeros(gui_data.N_vox, gui_data.Nt);
 gui_data.F_cumulative_sum = zeros(gui_data.N_vox, gui_data.Nt);
 gui_data.F_stdev = zeros(gui_data.N_vox, gui_data.Nt);
 gui_data.F_tSNR = zeros(gui_data.N_vox, gui_data.Nt);
 gui_data.tSNR_dyn_img = zeros(gui_data.Ni, gui_data.Nj, gui_data.Nk);
+gui_data.tSNR = nan(1, gui_data.Nt);
+gui_data.tSNR_gm = nan(1, gui_data.Nt);
+gui_data.tSNR_wm = nan(1, gui_data.Nt);
+gui_data.tSNR_csf = nan(1, gui_data.Nt);
 gui_data.X_MP_detrending = (1:gui_data.Nt)';
 gui_data.X_MP_detrending = gui_data.X_MP_detrending - mean(gui_data.X_MP_detrending); % demean non-constant regressors
 gui_data.X_MP_detrending = [gui_data.X_MP_detrending ones(gui_data.Nt,1)]; % add constant regressor
@@ -240,6 +244,8 @@ gui_data.X_Func_detrending = gui_data.X_MP_detrending;
 gui_data.MP = zeros(gui_data.Nt,6);
 gui_data.MP_detrended = zeros(gui_data.Nt,6);
 gui_data.MP_mm = zeros(gui_data.Nt,6);
+% gui_data.outlier_reg = zeros(1, gui_data.Nt);
+% gui_data.outlier_reg_Ydata = zeros(2, gui_data.Nt);
 
 
 % Initialize axes
@@ -250,7 +256,16 @@ gui_data.ax_FD.XGrid = 'on'; gui_data.ax_FD.YGrid = 'on';
 gui_data.ax_FD.Color = 'k';
 gui_data.ax_FD.Title.String = gui_data.ax_FD_title;
 gui_data.ax_FD.YLabel.String = 'mm';
-removeAxesTicks(gui_data.ax_volumes)
+removeAxesXTickLabels(gui_data.ax_FD)
+
+gui_data.plot_tSNR = plot(gui_data.ax_tSNR, gui_data.t, gui_data.tSNR, 'c', 'LineWidth', 2);
+gui_data.ax_tSNR.XLim = [0 (gui_data.Nt+1)]; gui_data.ax_tSNR.YLim = [0 100];
+gui_data.ax_tSNR.XGrid = 'on'; gui_data.ax_tSNR.YGrid = 'on';
+gui_data.ax_tSNR.Color = 'k';
+gui_data.ax_tSNR.Title.String = gui_data.ax_tSNR_title;
+gui_data.ax_tSNR.YLabel.String = 'a.u.';
+removeAxesXTickLabels(gui_data.ax_tSNR)
+
 GM_img = gui_data.F_theplot(gui_data.I_GM, :);
 WM_img = gui_data.F_theplot(gui_data.I_WM, :);
 CSF_img = gui_data.F_theplot(gui_data.I_CSF, :);
@@ -261,6 +276,7 @@ gui_data.plot_line1 = line([1 gui_data.Nt],[gui_data.line1_pos gui_data.line1_po
 gui_data.plot_line2 = line([1 gui_data.Nt],[gui_data.line2_pos gui_data.line2_pos],  'Color', 'g', 'LineWidth', 2 );
 hold off;
 
+removeAxesTicks(gui_data.ax_volumes);
 
 gui_data.RT_status = 'initialized';
 assignin('base', 'gui_data', gui_data)
@@ -279,13 +295,23 @@ function startRT(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
 
-[d, f, e] = fileparts(gui_data.functional4D_fn);
+if ~strcmp(gui_data.RT_status, 'stopped')
+    gui_data.i = 1;
+end
 gui_data.RT_status = 'running';
-gui_data.i = 1;
+gui_data.pb_stopRT.Enable = 'on';
+gui_data.pb_startRT.Enable = 'off';
+gui_data.pb_initialize.Enable = 'off';
+
 guidata(fig,gui_data);
 assignin('base', 'gui_data', gui_data)
-% Start real-time simulation run
-while (gui_data.i < (gui_data.Nt+1)) || (gui_data.RT_status ~= 'stopped')
+[d, f, e] = fileparts(gui_data.functional4D_fn);
+
+
+% Start/continue real-time simulation run
+while gui_data.i < (gui_data.Nt+1)
+    
+    gui_data = guidata(fig);
     t0_start = clock;
     
     txt_dyn.String = ['#' num2str(gui_data.i)];
@@ -386,9 +412,17 @@ while (gui_data.i < (gui_data.Nt+1)) || (gui_data.RT_status ~= 'stopped')
     gui_data.F_stdev(gui_data.I_mask, gui_data.i) = std(gui_data.F_dyn(gui_data.I_mask, 1:gui_data.i), 0, 2);
     gui_data.F_tSNR(gui_data.I_mask, gui_data.i) = gui_data.F_cumulative_mean(gui_data.I_mask,gui_data.i)./gui_data.F_stdev(gui_data.I_mask, gui_data.i);
     gui_data.tSNR_dyn_img = reshape(gui_data.F_tSNR(:, gui_data.i), gui_data.Ni, gui_data.Nj, gui_data.Nk);
+    
+    gui_data.tSNR(gui_data.i) = mean(gui_data.F_tSNR(gui_data.I_mask, gui_data.i));
+    gui_data.tSNR_gm(gui_data.i) = mean(gui_data.F_tSNR(gui_data.I_GM, gui_data.i));
+    gui_data.tSNR_wm(gui_data.i) = mean(gui_data.F_tSNR(gui_data.I_WM, gui_data.i));
+    gui_data.tSNR_csf(gui_data.i) = mean(gui_data.F_tSNR(gui_data.I_CSF, gui_data.i));
+    
     if fd >= gui_data.FD_threshold
         gui_data.outlier_counter = gui_data.outlier_counter + 1;
-        gui_data.FD_outliers = [gui_data.FD_outliers; gui_data.i];
+        gui_data.FD_outliers = [gui_data.FD_outliers gui_data.i];
+%         gui_data.outlier_reg(gui_data.i) = 1;
+%         gui_data.outlier_reg_Ydata(1, gui_data.i) = gui_data.ax_FD.YLim(2);
     end
     gui_data.FD_sum = gui_data.FD_sum + fd;
     gui_data.FD_dynamic_average = gui_data.FD_sum/gui_data.i;
@@ -397,13 +431,18 @@ while (gui_data.i < (gui_data.Nt+1)) || (gui_data.RT_status ~= 'stopped')
     gui_data.txt_Nvolume.String = ['Acquired volumes:  ' num2str(gui_data.i) '/' num2str(gui_data.Nt)];
     gui_data.Nvolume_valid = gui_data.i - gui_data.outlier_counter;
     valid_percentage = round(gui_data.Nvolume_valid/gui_data.i*100, 1);
-    gui_data.txt_Nvolume_valid.String = ['Valid volumes:  ' num2str(gui_data.Nvolume_valid) '/' num2str(gui_data.Nt) ' (' num2str(valid_percentage) '%)'];
+    gui_data.txt_Nvolume_valid.String = ['Valid volumes:  ' num2str(gui_data.Nvolume_valid) '/' num2str(gui_data.i) ' (' num2str(valid_percentage) '%)'];
     gui_data.txt_fdsum.String = ['Total FD:  ' num2str(gui_data.FD_sum)];
     gui_data.txt_fdave.String = ['Mean FD:  ' num2str(gui_data.FD_dynamic_average)];
+    gui_data.txt_tsnr.String = ['tSNR (brain):  ' num2str(gui_data.tSNR(gui_data.i))];
+    gui_data.txt_tsnr_gm.String = ['tSNR (GM):  ' num2str(gui_data.tSNR_gm(gui_data.i))];
+    gui_data.txt_tsnr_wm.String = ['tSNR (WM):  ' num2str(gui_data.tSNR_wm(gui_data.i))];
+    gui_data.txt_tsnr_csf.String = ['tSNR (CSF):  ' num2str(gui_data.tSNR_csf(gui_data.i))];
     
     t7_start = clock;
 
     drawFD(fig);
+    drawtSNR(fig);
     drawTHEPLOT(fig);
     drawBrains(fig);
     
@@ -411,12 +450,24 @@ while (gui_data.i < (gui_data.Nt+1)) || (gui_data.RT_status ~= 'stopped')
     gui_data.T(gui_data.i,8) = etime(clock,t0_start);
     
     pause(0.001);
-
-    gui_data.i = gui_data.i +1;
+    
+    gui_data.i = gui_data.i+1;
+    gui_data_tmp = guidata(fig);
+    drawnow; % one way operation to allow gui itself to update (not to allow other arallel operations to finish processing)
+    
+    % update guidata - TODO
+    if strcmp(gui_data_tmp.RT_status, 'stopped')
+        gui_data.RT_status = gui_data_tmp.RT_status;
+        assignin('base', 'gui_data', gui_data)
+        guidata(fig,gui_data);
+        break;
+    end
     assignin('base', 'gui_data', gui_data)
     guidata(fig,gui_data);
 end
 
+gui_data.RT_status = 'completed';
+gui_data.pb_stopRT.Enable = 'off';
 % guidata(fig,gui_data);
 
 end
@@ -425,7 +476,14 @@ end
 function stopRT(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
-gui_data.RT_status = 'stopped';
+
+if strcmp(gui_data.RT_status, 'running')
+    gui_data.RT_status = 'stopped';
+    gui_data.pb_startRT.Enable = 'on';
+    gui_data.pb_initialize.Enable = 'on';
+    gui_data.pb_stopRT.Enable = 'off';
+end
+
 assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data);
 end
@@ -435,8 +493,20 @@ function drawFD(fig)
 gui_data = guidata(fig);
 set(gui_data.plot_FD, 'YData', gui_data.FD);
 drawnow;
-assignin('base', 'gui_data', gui_data)
-guidata(fig, gui_data);
+hold(gui_data.ax_FD,'on');
+clear gui_data.line_outliers;
+gui_data.line_outliers = line(gui_data.ax_FD, [gui_data.FD_outliers; gui_data.FD_outliers], [gui_data.ax_FD.YLim(2)*ones(1, numel(gui_data.FD_outliers)); zeros(1, numel(gui_data.FD_outliers))],  'Color', 'y', 'LineWidth', 1.5 );
+hold(gui_data.ax_FD,'off');
+% assignin('base', 'gui_data', gui_data)
+% guidata(fig, gui_data);
+end
+
+function drawtSNR(fig)
+gui_data = guidata(fig);
+set(gui_data.plot_tSNR, 'YData', gui_data.tSNR);
+drawnow;
+% assignin('base', 'gui_data', gui_data)
+% guidata(fig, gui_data);
 end
 
 function drawTHEPLOT(fig)
@@ -450,8 +520,8 @@ gui_data.ax_thePlot.Title.String = gui_data.ax_thePlot_title;
 gui_data.ax_thePlot.YLabel.String = 'voxels';
 gui_data.ax_thePlot.XLabel.String = 'Volume #';
 drawnow;
-assignin('base', 'gui_data', gui_data)
-guidata(fig, gui_data);
+% assignin('base', 'gui_data', gui_data)
+% guidata(fig, gui_data);
 end
 
 
@@ -486,8 +556,8 @@ gui_data = guidata(fig);
 gui_data.slice_number = round(hObject.Value);
 gui_data.slice_number = min(gui_data.slice_number, gui_data.Ndims(gui_data.popup_setDim.Value));
 gui_data.txt_slice.String = ['Change slice: #' num2str(gui_data.slice_number)];
-assignin('base', 'gui_data', gui_data)
-guidata(fig, gui_data);
+% assignin('base', 'gui_data', gui_data)
+% guidata(fig, gui_data);
 
 end
 
@@ -513,8 +583,8 @@ else
     end
 end
 gui_data.ax_volumes.Title.String = '';
-assignin('base', 'gui_data', gui_data)
-guidata(fig, gui_data);
+% assignin('base', 'gui_data', gui_data)
+% guidata(fig, gui_data);
 
 end
 
@@ -560,6 +630,10 @@ set(ax,'ytick',[])
 set(ax,'yticklabel',[])
 set(ax,'ztick',[])
 set(ax,'zticklabel',[])
+end
+
+function removeAxesXTickLabels(ax)
+set(ax,'xticklabel',[])
 end
 
 

@@ -470,7 +470,6 @@ fig.Visible = 'on';
         assignin('base','T',T);
         assignin('base','DVARS',DVARS);
         assignin('base','FD',FD);
-        
     end
 
 

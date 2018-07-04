@@ -155,6 +155,22 @@ gui_data.f4D_img = spm_read_vols(spm_vol(gui_data.functional4D_fn));
 [gui_data.Ni, gui_data.Nj, gui_data.Nk, gui_data.Nt] = size(gui_data.f4D_img);
 gui_data.Ndims = [gui_data.Ni; gui_data.Nj; gui_data.Nk];
 gui_data.slice_number = floor(gui_data.Nk/2);
+% real-time realign and reslice parameters
+gui_data.use_rt = 1;
+gui_data.flagsSpmRealign = struct('quality',.9,'fwhm',5,'sep',4,...
+    'interp',4,'wrap',[0 0 0],'rtm',0,'PW','','lkp',1:6);
+gui_data.flagsSpmReslice = struct('quality',.9,'fwhm',5,'sep',4,...
+    'interp',4,'wrap',[0 0 0],'mask',1,'mean',0,'which', 2);
+gui_data.infoVolTempl = spm_vol(gui_data.functional0_fn);
+gui_data.imgVolTempl  = spm_read_vols(gui_data.infoVolTempl);
+gui_data.dimTemplMotCorr     = gui_data.infoVolTempl.dim;
+gui_data.matTemplMotCorr     = gui_data.infoVolTempl.mat;
+gui_data.A0=[];gui_data.x1=[];gui_data.x2=[];gui_data.x3=[];gui_data.wt=[];gui_data.deg=[];gui_data.b=[];
+gui_data.R(1,1).mat = gui_data.matTemplMotCorr;
+gui_data.R(1,1).dim = gui_data.dimTemplMotCorr;
+gui_data.R(1,1).Vol = gui_data.imgVolTempl;
+gui_data.nrSkipVol = 0;
+
 [dir, fn, ext] = fileparts(gui_data.functional4D_fn);
 if ~exist([dir filesep fn '_00001' ext],'file')
     gui_data.f4D_img_spm = spm_file_split(gui_data.functional4D_fn);
@@ -313,12 +329,12 @@ while gui_data.i < (gui_data.Nt+1)
     
     gui_data = guidata(fig);
     t0_start = clock;
-    
     txt_dyn.String = ['#' num2str(gui_data.i)];
     
     % 0: Load dynamic functional image
     fdyn_fn = [d filesep f '_' sprintf('%05d',gui_data.i) e]; % filename of dynamic functional image
-    gui_data.F_dyn_img = spm_read_vols(spm_vol(fdyn_fn)); % this is the unprocessed image to be used for DVARS and THEPLOT
+    currentVol = spm_vol(fdyn_fn);
+    gui_data.F_dyn_img = spm_read_vols(currentVol); % this is the unprocessed image to be used for DVARS and THEPLOT
     gui_data.F_dyn(:,gui_data.i) = gui_data.F_dyn_img(:);
     
     
@@ -328,14 +344,36 @@ while gui_data.i < (gui_data.Nt+1)
     % a) First realign each dynamic image data to functional0 to
     % get Head Movement/Motion Parameters (HMPs / MPs)
     t1_start = clock;
-    r_fdyn_fn = rtRealignReslice(gui_data.functional0_fn, fdyn_fn);
+    if gui_data.use_rt == 1
+        % Access current 'real-time' volume and assign to second index of R
+        gui_data.R(2,1).mat = currentVol.mat;
+        gui_data.R(2,1).dim = currentVol.dim;
+        gui_data.R(2,1).Vol = gui_data.F_dyn_img;
+        
+        % realign (FROM OPENNFT: preprVol.m)
+        [gui_data.R, gui_data.A0, gui_data.x1, gui_data.x2, gui_data.x3, gui_data.wt, gui_data.deg, gui_data.b, gui_data.nrIter] = spm_realign_rt(gui_data.R, gui_data.flagsSpmRealign, gui_data.i, gui_data.nrSkipVol + 1, gui_data.A0, gui_data.x1, gui_data.x2, gui_data.x3, gui_data.wt, gui_data.deg, gui_data.b);
+        
+        % MC params (FROM OPENNFT: preprVol.m). STEPHAN NOTE: I don't understand this part, but it runs fine
+        tmpMCParam = spm_imatrix(gui_data.R(2,1).mat / gui_data.R(1,1).mat);
+        if (gui_data.i == gui_data.nrSkipVol + 1)
+            gui_data.P.offsetMCParam = tmpMCParam(1:6);
+        end
+        gui_data.P.motCorrParam(gui_data.i,:) = tmpMCParam(1:6)-gui_data.P.offsetMCParam; % STEPHAN NOTE: I changed indVolNorm to indVol due to error, not sure if this okay or wrong?
+        gui_data.MP(gui_data.i,:) = gui_data.P.motCorrParam(gui_data.i,:);
+        % Reslice (FROM OPENNFT: preprVol.m)
+        gui_data.reslVol = spm_reslice_rt(gui_data.R, gui_data.flagsSpmReslice);
+    else
+        r_fdyn_fn = rtRealignReslice(gui_data.functional0_fn, fdyn_fn);
+        mp = load([d filesep 'rp_' f '.txt']); % stuff todo
+        gui_data.MP(gui_data.i,:) = mp(end,:);
+    end
     gui_data.T(gui_data.i,1) = etime(clock,t1_start);
+    
     % b) Then load MPs, calculate FD, and load figure data
     t2_start = clock;
-    mp = load([d filesep 'rp_' f '.txt']); % stuff todo
-    gui_data.MP(gui_data.i,:) = mp(end,:);
     gui_data.MP_mm(gui_data.i,:) = gui_data.MP(gui_data.i,:);
     gui_data.MP_mm(gui_data.i,4:6) = gui_data.MP(gui_data.i,4:6)*50; % 50mm = assumed radius of subject head; from Power et al paper (2014) [1].
+    
     if gui_data.i == 1
         mp_diff = zeros(1, 6); % if first dynamic is realigned to functional0, this is technically not correct. TODO
     else
@@ -376,8 +414,13 @@ while gui_data.i < (gui_data.Nt+1)
     % a) First smooth dynamic functional data (see paper) using
     % specified Gaussian kernel fwhm.
     t4_start = clock;
-    s_fdyn_fn = rtSmooth(fdyn_fn, [6 6 6]);
-    s_fdyn_img = spm_read_vols(spm_vol(s_fdyn_fn));
+    if gui_data.use_rt == 1
+        s_fdyn_img = zeros(gui_data.Ni, gui_data.Nj, gui_data.Nk);
+        spm_smooth(gui_data.reslVol, s_fdyn_img, [6 6 6]);
+    else
+        s_fdyn_fn = rtSmooth(fdyn_fn, [6 6 6]);
+        s_fdyn_img = spm_read_vols(spm_vol(s_fdyn_fn));
+    end
     gui_data.F_smoothed(:,gui_data.i) = s_fdyn_img(:);
     gui_data.T(gui_data.i,4) = etime(clock,t4_start);
     % b) Then detrend masked data using cumulative GLM. Mask uses

@@ -1,4 +1,4 @@
-function output = preRtPreProc(functional0_fn, structural_fn, spm_dir)
+function output = preRtPreProc(fig, functional0_fn, structural_fn, spm_dir)
 % Function to complete pre-real-time preprocessing of structural and
 % functional data from a single subject. Steps include coregistering
 % structural image to initial functional image, segmenting the coregistered
@@ -16,9 +16,23 @@ function output = preRtPreProc(functional0_fn, structural_fn, spm_dir)
 %__________________________________________________________________________
 % Copyright (C) Stephan Heunis
 
-
 output = struct;
 
+busy_strings = struct;
+busy_strings.str1 = '';
+busy_strings.str2 = '.';
+busy_strings.str3 = '..';
+busy_strings.str4 = '...';
+busy_strings.str5 = '....';
+
+tmr = timer;
+gui_data = guidata(fig);
+gui_data.preProc_step1_status = 0; % 0 = not done; 1 = done;
+gui_data.preProc_step2_status = 0; % 0 = not done; 1 = done;
+gui_data.preProc_step3_status = 0; % 0 = not done; 1 = done;
+
+step = 1;
+startBusyTimer;
 % STEP 1 -- Coregister structural image to first dynamic image (estimate and reslice)
 disp('1 - Coregistering structural to functional image space...');
 coreg_estimate = struct;
@@ -41,7 +55,12 @@ coreg_estimate.matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.prefix = 'r';
 % Run
 cfg_util('run',coreg_estimate.matlabbatch);
 disp('done');
+gui_data.preProc_step1_status = 1;
+gui_data.txt_preproc1_status.String = char(hex2dec('2713'));
+stopBusyTimer;
 
+step = 2;
+startBusyTimer;
 % STEP 2 -- Segmentation of coregistered structural image into GM, WM, CSF, etc
 % (with implicit warping to MNI space, saving forward and inverse transformations)
 disp('2 - Segmenting coregistered structural image into GM, WM, CSF, etc...');
@@ -81,7 +100,13 @@ output.bone_fn = [d filesep 'c4' fn '.nii'];
 output.soft_fn = [d filesep 'c5' fn '.nii'];
 output.air_fn = [d filesep 'c6' fn '.nii'];
 disp('done');
+gui_data.preProc_step2_status = 1;
+gui_data.txt_preproc2_status.String = char(hex2dec('2713'));
+stopBusyTimer;
 
+
+step = 3;
+startBusyTimer;
 % STEP 3 -- Reslice all to functional-resolution image grid
 disp('3 - Reslice all generated images to functional-resolution image grid');
 reslice = struct;
@@ -110,3 +135,44 @@ output.rbone_fn = [d filesep 'rc4' fn '.nii'];
 output.rsoft_fn = [d filesep 'rc5' fn '.nii'];
 output.rair_fn = [d filesep 'rc6' fn '.nii'];
 disp('done');
+gui_data.preProc_step3_status = 1;
+gui_data.txt_preproc3_status.String = char(hex2dec('2713'));
+stopBusyTimer;
+
+guidata(fig,gui_data);
+delete(tmr);
+clear tmr;
+
+
+    function updateBusyStrings(tmr,~)
+        if tmr.UserData == 6
+            tmr.UserData = 1;
+        end
+        switch(step)
+            case 1
+                gui_data.txt_preproc1_status.String = busy_strings.(['str' num2str(tmr.UserData)]);
+            case 2
+                gui_data.txt_preproc2_status.String = busy_strings.(['str' num2str(tmr.UserData)]);
+            case 3
+                gui_data.txt_preproc3_status.String = busy_strings.(['str' num2str(tmr.UserData)]);
+            otherwise
+        end
+        
+        tmr.UserData = tmr.UserData + 1;
+        drawnow;
+    end
+
+    function startBusyTimer()
+        tmr.UserData = 1;
+        tmr.TimerFcn = @updateBusyStrings;
+        tmr.Period = 0.5;
+        tmr.ExecutionMode = 'fixedRate';
+        start(tmr)
+    end
+
+    function stopBusyTimer()
+        stop(tmr)
+    end
+
+end
+

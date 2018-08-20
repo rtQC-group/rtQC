@@ -27,6 +27,9 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function rtQC_display()
+
+% Open SPM
+% spm fmri
 % Create main GUI figure
 fig = figure('Visible','off',...
     'Name', 'rtQC',...
@@ -37,16 +40,26 @@ fig = figure('Visible','off',...
     'ToolBar', 'none');
 % Main data structure
 gui_data = guidata(fig);
+% Get rtQC defaults
+defaults = rtQC_defaults();
+fields = fieldnames(defaults);
+for i=1:numel(fields)
+    gui_data.(fields{i}) = defaults.(fields{i});
+end
+
 % Setup all UIcontrols and GUI components
-setup_rtQC_display;
+rtQC_display_setup;
 % Set callbacks
 gui_data.tgroup.SelectionChangedFcn = @tabChangedCallback;
 gui_data.pb_help.Callback = @linkToGithub;
+gui_data.pb_docs.Callback = @linkToDocs;
+gui_data.edit_fd_threshold_defaults.Callback = @editFDthreshold;
+gui_data.edit_spm_defaults.Callback = @editSPMdir;
+gui_data.pb_spm_defaults.Callback = @setSPMdir;
 gui_data.edit_structural.Callback = @editStructural;
 gui_data.pb_structural.Callback = @setStructural;
 gui_data.edit_functional.Callback = @editFunctional;
 gui_data.pb_functional.Callback = @setFunctional;
-gui_data.edit_functional.Callback = @editFunctional;
 gui_data.edit_fd_threshold.Callback = @editFDthreshold;
 gui_data.pb_initialize.Callback = @initialize;
 gui_data.pb_startRT.Callback = @startRT;
@@ -54,6 +67,13 @@ gui_data.pb_stopRT.Callback = @stopRT;
 gui_data.popup_setDim.Callback = @setDim;
 gui_data.sld_slice.Callback = @changeSlice;
 gui_data.popup_setImg.Callback = @setImg;
+
+gui_data.edit_structural_pre.Callback = @editStructural;
+gui_data.pb_structural_pre.Callback = @setStructural;
+gui_data.edit_functional_pre.Callback = @editFunctional;
+gui_data.pb_functional_pre.Callback = @setFunctional;
+gui_data.pb_preproc.Callback = @runPreProc;
+
 set(findall(fig, '-property', 'Interruptible'), 'Interruptible', 'on')
 
 % Make figure visible after normalizing units
@@ -91,6 +111,52 @@ url = 'https://github.com/rtQC-group/rtQC';
 web(url, '-browser')
 end
 
+function linkToDocs(hObject,eventdata)
+f = msgbox('This button could link to a readthedocs page that serves as rtQC documentation');
+end
+
+
+
+function editFDthreshold(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+txt = get(hObject, 'String');
+gui_data.FD_threshold = str2double(txt);
+if isnan(gui_data.FD_threshold)
+    %     set(hObject, 'String', 0.25);
+    gui_data.edit_fd_threshold.String = '0.25';
+    gui_data.edit_fd_threshold_defaults.String = '0.25';
+    gui_data.FD_threshold = 0.25;
+    errordlg('Input must be a number','Error');
+else
+    gui_data.edit_fd_threshold.String = txt;
+    gui_data.edit_fd_threshold_defaults.String = txt;
+end
+
+assignin('base', 'gui_data', gui_data)
+guidata(fig,gui_data)
+end
+
+
+function editSPMdir(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+end
+
+function setSPMdir(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+% cd(gui_data.root_dir)
+dirname = uigetdir(gui_data.root_dir, 'Select the SPM12 toolbox directory');
+if dirname ~= 0
+    gui_data.spm_dir = dirname;
+    gui_data.edit_spm_defaults.String = dirname;
+end
+assignin('base', 'gui_data', gui_data)
+guidata(fig, gui_data);
+end
+
+
 
 function editStructural(hObject,eventdata)
 fig = ancestor(hObject,'figure');
@@ -105,6 +171,7 @@ cd(gui_data.root_dir)
 if filename ~= 0
     gui_data.structural_fn = [pathname filename];
     gui_data.edit_structural.String = gui_data.structural_fn;
+    gui_data.edit_structural_pre.String = gui_data.structural_fn;
 end
 assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
@@ -123,80 +190,26 @@ cd(gui_data.root_dir)
 if filename ~= 0
     gui_data.functional4D_fn = [pathname filename];
     gui_data.edit_functional.String = gui_data.functional4D_fn;
+    gui_data.edit_functional_pre.String = gui_data.functional4D_fn;
 end
 assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 end
 
 
-function editFDthreshold(hObject,eventdata)
-fig = ancestor(hObject,'figure');
-gui_data = guidata(fig);
-gui_data.FD_threshold = str2double(get(hObject, 'String'));
-if isnan(gui_data.FD_threshold)
-    set(hObject, 'String', 1);
-    gui_data.FD_threshold = 1;
-    errordlg('Input must be a number','Error');
-end
-assignin('base', 'gui_data', gui_data)
-guidata(fig,gui_data)
-
-end
 
 
 
 
-function initialize(hObject,eventdata)
-
+function runPreProc(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
 gui_data.functional0_fn = [gui_data.functional4D_fn ',1'];
-gui_data.f4D_img = spm_read_vols(spm_vol(gui_data.functional4D_fn));
-[gui_data.Ni, gui_data.Nj, gui_data.Nk, gui_data.Nt] = size(gui_data.f4D_img);
-gui_data.Ndims = [gui_data.Ni; gui_data.Nj; gui_data.Nk];
-gui_data.slice_number = floor(gui_data.Nk/2);
-% real-time realign and reslice parameters
-gui_data.use_rt = 1;
-gui_data.flagsSpmRealign = struct('quality',.9,'fwhm',5,'sep',4,...
-    'interp',4,'wrap',[0 0 0],'rtm',0,'PW','','lkp',1:6);
-gui_data.flagsSpmReslice = struct('quality',.9,'fwhm',5,'sep',4,...
-    'interp',4,'wrap',[0 0 0],'mask',1,'mean',0,'which', 2);
-gui_data.infoVolTempl = spm_vol(gui_data.functional0_fn);
-gui_data.imgVolTempl  = spm_read_vols(gui_data.infoVolTempl);
-gui_data.dimTemplMotCorr     = gui_data.infoVolTempl.dim;
-gui_data.matTemplMotCorr     = gui_data.infoVolTempl.mat;
-gui_data.A0=[];gui_data.x1=[];gui_data.x2=[];gui_data.x3=[];gui_data.wt=[];gui_data.deg=[];gui_data.b=[];
-gui_data.R(1,1).mat = gui_data.matTemplMotCorr;
-gui_data.R(1,1).dim = gui_data.dimTemplMotCorr;
-gui_data.R(1,1).Vol = gui_data.imgVolTempl;
-gui_data.nrSkipVol = 0;
-
-[dir, fn, ext] = fileparts(gui_data.functional4D_fn);
-if ~exist([dir filesep fn '_00001' ext],'file')
-    gui_data.f4D_img_spm = spm_file_split(gui_data.functional4D_fn);
-end
-
-gui_data.F_dyn_img = gui_data.f4D_img(:,:,:,1);
-gui_data.tSNR_dyn_img = gui_data.f4D_img(:,:,:,1);
-gui_data.FD_outliers = []; % Outlier volumes
-gui_data.FD_sum = 0;
-gui_data.outlier_counter = 0; % Outlier counter
-gui_data.FD_dynamic_average = 0;
-gui_data.t = 1:gui_data.Nt;
-gui_data.MP1 = zeros(1,gui_data.Nt);
-gui_data.MPall = cell(1,6);
-for p = 1:6
-    gui_data.MPall{p} =  gui_data.MP1;
-end
-gui_data.FD = nan(gui_data.Nt,1);
-gui_data.DVARS = nan(1,gui_data.Nt);
-gui_data.T = zeros(gui_data.Nt,8); % Timing vector: realignment, FD, DVARS, smoothing, detrending, PSC, draw stuff, total
-
-
 % Preprocess structural and f0 images
 [d, f, e] = fileparts(gui_data.structural_fn);
 if exist([d filesep 'rc1' f e], 'file')
     % 1) If preprocessing has already been done, assign variables
+    gui_data.preProc_status = 1;
     gui_data.forward_transformation = [d filesep 'y_' f e];
     gui_data.inverse_transformation = [d filesep 'iy_' f e];
     gui_data.gm_fn = [d filesep 'c1' f e];
@@ -212,18 +225,78 @@ if exist([d filesep 'rc1' f e], 'file')
     gui_data.rbone_fn = [d filesep 'rc4' f e];
     gui_data.rsoft_fn = [d filesep 'rc5' f e];
     gui_data.rair_fn = [d filesep 'rc6' f e];
+    gui_data.preProc_step1_status = 1;
+    gui_data.txt_preproc1_status.String = char(hex2dec('2713'));
+    gui_data.preProc_step2_status = 1;
+    gui_data.txt_preproc2_status.String = char(hex2dec('2713'));
+    gui_data.preProc_step3_status = 1;
+    gui_data.txt_preproc3_status.String = char(hex2dec('2713'));
 else
     % 2) If not done, run scripts to get data in correct formats for
     % real-time processing
-    output = preRtPreProc(gui_data.functional0_fn, gui_data.structural_fn, gui_data.spm_dir);
+    gui_data.preProc_status = 0;
+    guidata(fig,gui_data);
+    output = preRtPreProc(fig, gui_data.functional0_fn, gui_data.structural_fn, gui_data.spm_dir);
     for fn = fieldnames(output)'
         gui_data.(fn{1}) = output.(fn{1});
     end
+    gui_data.preProc_status = 1;
+end
+guidata(fig,gui_data);
 end
 
+
+
+function initialize(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+% Check preprocessing of structural and f0 images
+if gui_data.preProc_status ~= 1
+    errordlg('Please first complete the preprocessing in the PRE-NF QC tab','Preprocessing not done!');
+    return;
+end
+gui_data.functional0_fn = [gui_data.functional4D_fn ',1'];
+gui_data.f4D_img = spm_read_vols(spm_vol(gui_data.functional4D_fn));
+[gui_data.Ni, gui_data.Nj, gui_data.Nk, gui_data.Nt] = size(gui_data.f4D_img);
+gui_data.Ndims = [gui_data.Ni; gui_data.Nj; gui_data.Nk];
+gui_data.slice_number = floor(gui_data.Nk/2);
+[dir, fn, ext] = fileparts(gui_data.functional4D_fn);
+if ~exist([dir filesep fn '_00001' ext],'file')
+    gui_data.f4D_img_spm = spm_file_split(gui_data.functional4D_fn);
+end
+% real-time realign and reslice parameters
+gui_data.use_rt = 1;
+gui_data.flagsSpmRealign = struct('quality',.9,'fwhm',5,'sep',4,...
+    'interp',4,'wrap',[0 0 0],'rtm',0,'PW','','lkp',1:6);
+gui_data.flagsSpmReslice = struct('quality',.9,'fwhm',5,'sep',4,...
+    'interp',4,'wrap',[0 0 0],'mask',1,'mean',0,'which', 2);
+gui_data.infoVolTempl = spm_vol(gui_data.functional0_fn);
+gui_data.imgVolTempl  = spm_read_vols(gui_data.infoVolTempl);
+gui_data.dimTemplMotCorr     = gui_data.infoVolTempl.dim;
+gui_data.matTemplMotCorr     = gui_data.infoVolTempl.mat;
+gui_data.dicomInfoVox   = sqrt(sum(gui_data.matTemplMotCorr(1:3,1:3).^2));
+gui_data.A0=[];gui_data.x1=[];gui_data.x2=[];gui_data.x3=[];gui_data.wt=[];gui_data.deg=[];gui_data.b=[];
+gui_data.R(1,1).mat = gui_data.matTemplMotCorr;
+gui_data.R(1,1).dim = gui_data.dimTemplMotCorr;
+gui_data.R(1,1).Vol = gui_data.imgVolTempl;
+gui_data.nrSkipVol = 0;
+gui_data.F_dyn_img = gui_data.f4D_img(:,:,:,1);
+gui_data.tSNR_dyn_img = gui_data.f4D_img(:,:,:,1);
+gui_data.FD_outliers = []; % Outlier volumes
+gui_data.FD_sum = 0;
+gui_data.outlier_counter = 0; % Outlier counter
+gui_data.FD_dynamic_average = 0;
+gui_data.t = 1:gui_data.Nt;
+gui_data.MP1 = zeros(1,gui_data.Nt);
+gui_data.MPall = cell(1,6);
+for p = 1:6
+    gui_data.MPall{p} =  gui_data.MP1;
+end
+gui_data.FD = nan(gui_data.Nt,1);
+gui_data.DVARS = nan(1,gui_data.Nt);
+gui_data.T = zeros(gui_data.Nt,8); % Timing vector: 1)realignment, 2)FD, 3)DVARS, 4)smoothing, 5)detrending, 6)PSC, 7)draw stuff, 8)total
 % Create binary GM, WM and CSF masks
 [gui_data.GM_img_bin, gui_data.WM_img_bin, gui_data.CSF_img_bin] = createBinarySegments(gui_data.rgm_fn, gui_data.rwm_fn, gui_data.rcsf_fn, 0.1);
-
 % Initialize variables for real-time processing
 gui_data.I_GM = find(gui_data.GM_img_bin);
 gui_data.I_WM = find(gui_data.WM_img_bin);
@@ -234,8 +307,6 @@ gui_data.N_maskvox = numel(gui_data.I_mask);
 gui_data.N_vox = gui_data.Ni*gui_data.Nj*gui_data.Nk;
 gui_data.line1_pos = numel(gui_data.I_GM);
 gui_data.line2_pos = numel(gui_data.I_GM) + numel(gui_data.I_WM);
-
-
 % Initialize variables to be updated during each real-time iteration
 gui_data.F_realigned = zeros(gui_data.N_vox, gui_data.Nt);
 gui_data.F_smoothed = zeros(gui_data.N_vox, gui_data.Nt);
@@ -262,8 +333,6 @@ gui_data.MP_detrended = zeros(gui_data.Nt,6);
 gui_data.MP_mm = zeros(gui_data.Nt,6);
 % gui_data.outlier_reg = zeros(1, gui_data.Nt);
 % gui_data.outlier_reg_Ydata = zeros(2, gui_data.Nt);
-
-
 % Initialize axes
 gui_data.plot_FD = plot(gui_data.ax_FD, gui_data.t, gui_data.FD, 'c', 'LineWidth', 2);
 gui_data.fd_line1 = line(gui_data.ax_FD, [1 gui_data.Nt],[gui_data.FD_threshold gui_data.FD_threshold],  'Color', 'r', 'LineWidth', 1.5 );
@@ -273,7 +342,6 @@ gui_data.ax_FD.Color = 'k';
 gui_data.ax_FD.Title.String = gui_data.ax_FD_title;
 gui_data.ax_FD.YLabel.String = 'mm';
 removeAxesXTickLabels(gui_data.ax_FD)
-
 gui_data.plot_tSNR = plot(gui_data.ax_tSNR, gui_data.t, gui_data.tSNR, 'c', 'LineWidth', 2);
 gui_data.ax_tSNR.XLim = [0 (gui_data.Nt+1)]; gui_data.ax_tSNR.YLim = [0 100];
 gui_data.ax_tSNR.XGrid = 'on'; gui_data.ax_tSNR.YGrid = 'on';
@@ -281,7 +349,6 @@ gui_data.ax_tSNR.Color = 'k';
 gui_data.ax_tSNR.Title.String = gui_data.ax_tSNR_title;
 gui_data.ax_tSNR.YLabel.String = 'a.u.';
 removeAxesXTickLabels(gui_data.ax_tSNR)
-
 GM_img = gui_data.F_theplot(gui_data.I_GM, :);
 WM_img = gui_data.F_theplot(gui_data.I_WM, :);
 CSF_img = gui_data.F_theplot(gui_data.I_CSF, :);
@@ -291,15 +358,12 @@ hold on;
 gui_data.plot_line1 = line([1 gui_data.Nt],[gui_data.line1_pos gui_data.line1_pos],  'Color', 'b', 'LineWidth', 2 );
 gui_data.plot_line2 = line([1 gui_data.Nt],[gui_data.line2_pos gui_data.line2_pos],  'Color', 'g', 'LineWidth', 2 );
 hold off;
-
 removeAxesTicks(gui_data.ax_volumes);
-
 gui_data.RT_status = 'initialized';
+[gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
 assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data);
-
-msgbox('Preprocessing done!');
-
+msgbox('Initialized for real-time operation');
 end
 
 
@@ -315,9 +379,7 @@ if ~strcmp(gui_data.RT_status, 'stopped')
     gui_data.i = 1;
 end
 gui_data.RT_status = 'running';
-gui_data.pb_stopRT.Enable = 'on';
-gui_data.pb_startRT.Enable = 'off';
-gui_data.pb_initialize.Enable = 'off';
+[gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
 
 guidata(fig,gui_data);
 assignin('base', 'gui_data', gui_data)
@@ -416,7 +478,8 @@ while gui_data.i < (gui_data.Nt+1)
     t4_start = clock;
     if gui_data.use_rt == 1
         s_fdyn_img = zeros(gui_data.Ni, gui_data.Nj, gui_data.Nk);
-        spm_smooth(gui_data.reslVol, s_fdyn_img, [6 6 6]);
+        gKernel = [6 6 6] ./ gui_data.dicomInfoVox;
+        spm_smooth(gui_data.reslVol, s_fdyn_img, gKernel);
     else
         s_fdyn_fn = rtSmooth(fdyn_fn, [6 6 6]);
         s_fdyn_img = spm_read_vols(spm_vol(s_fdyn_fn));
@@ -464,8 +527,8 @@ while gui_data.i < (gui_data.Nt+1)
     if fd >= gui_data.FD_threshold
         gui_data.outlier_counter = gui_data.outlier_counter + 1;
         gui_data.FD_outliers = [gui_data.FD_outliers gui_data.i];
-%         gui_data.outlier_reg(gui_data.i) = 1;
-%         gui_data.outlier_reg_Ydata(1, gui_data.i) = gui_data.ax_FD.YLim(2);
+        %         gui_data.outlier_reg(gui_data.i) = 1;
+        %         gui_data.outlier_reg_Ydata(1, gui_data.i) = gui_data.ax_FD.YLim(2);
     end
     gui_data.FD_sum = gui_data.FD_sum + fd;
     gui_data.FD_dynamic_average = gui_data.FD_sum/gui_data.i;
@@ -483,10 +546,11 @@ while gui_data.i < (gui_data.Nt+1)
     gui_data.txt_tsnr_csf.String = ['tSNR (CSF):  ' num2str(gui_data.tSNR_csf(gui_data.i))];
     
     t7_start = clock;
-
+    
     drawFD(fig);
     drawtSNR(fig);
     drawTHEPLOT(fig);
+    checkVolumeSettings(fig);
     drawBrains(fig);
     
     gui_data.T(gui_data.i,7) = etime(clock,t7_start);
@@ -496,7 +560,7 @@ while gui_data.i < (gui_data.Nt+1)
     
     gui_data.i = gui_data.i+1;
     gui_data_tmp = guidata(fig);
-    drawnow; % one way operation to allow gui itself to update (not to allow other arallel operations to finish processing)
+    drawnow; % one way operation to allow gui itself to update (not to allow other parallel operations to finish processing)
     
     % update guidata - TODO
     if strcmp(gui_data_tmp.RT_status, 'stopped')
@@ -510,7 +574,7 @@ while gui_data.i < (gui_data.Nt+1)
 end
 
 gui_data.RT_status = 'completed';
-gui_data.pb_stopRT.Enable = 'off';
+[gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
 % guidata(fig,gui_data);
 
 end
@@ -520,12 +584,8 @@ function stopRT(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
 
-if strcmp(gui_data.RT_status, 'running')
-    gui_data.RT_status = 'stopped';
-    gui_data.pb_startRT.Enable = 'on';
-    gui_data.pb_initialize.Enable = 'on';
-    gui_data.pb_stopRT.Enable = 'off';
-end
+gui_data.RT_status = 'stopped';
+[gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
 
 assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data);
@@ -558,7 +618,7 @@ GM_img = gui_data.F_theplot(gui_data.I_GM, :);
 WM_img = gui_data.F_theplot(gui_data.I_WM, :);
 CSF_img = gui_data.F_theplot(gui_data.I_CSF, :);
 all_img = [GM_img; WM_img; CSF_img];
-set(gui_data.img_thePlot, 'CData', all_img); 
+set(gui_data.img_thePlot, 'CData', all_img);
 gui_data.ax_thePlot.Title.String = gui_data.ax_thePlot_title;
 gui_data.ax_thePlot.YLabel.String = 'voxels';
 gui_data.ax_thePlot.XLabel.String = 'Volume #';
@@ -600,10 +660,23 @@ gui_data.slice_number = round(hObject.Value);
 gui_data.slice_number = min(gui_data.slice_number, gui_data.Ndims(gui_data.popup_setDim.Value));
 gui_data.txt_slice.String = ['Change slice: #' num2str(gui_data.slice_number)];
 % assignin('base', 'gui_data', gui_data)
-% guidata(fig, gui_data);
+guidata(fig, gui_data);
 
 end
 
+
+function checkVolumeSettings(fig)
+gui_data = guidata(fig);
+
+
+dimension = gui_data.popup_setDim.Value;
+
+gui_data.sld_slice.Max = gui_data.Ndims(dimension);
+gui_data.slice_number = floor(gui_data.Ndims(gui_data.popup_setDim.Value)/2);
+gui_data.sld_slice.Value = gui_data.slice_number;
+gui_data.sld_slice.Max = gui_data.Ndims(gui_data.popup_setDim.Value);
+
+end
 
 function drawBrains(fig)
 gui_data = guidata(fig);
@@ -634,6 +707,41 @@ end
 
 
 
+function [pb_initialize, pb_startRT, pb_stopRT] = rtControlsDisplay(RT_status)
+
+% RT_status = initialized, running, stopped, completed.
+% [gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
+% if strcmp(RT_status, 'running')
+%     pb_stopRT = 'on';
+%     pb_startRT = 'off';
+%     pb_initialize = 'off';
+% end
+
+switch RT_status
+    case 'initialized'
+        pb_initialize = 'on';
+        pb_startRT = 'on';
+        pb_stopRT = 'off';
+    case 'running'
+        pb_initialize = 'off';
+        pb_startRT = 'off';
+        pb_stopRT = 'on';
+    case 'stopped'
+        pb_initialize = 'on';
+        pb_startRT = 'on';
+        pb_stopRT = 'off';
+    case 'completed'
+        pb_initialize = 'on';
+        pb_startRT = 'on';
+        pb_stopRT = 'off';
+    otherwise
+        
+end
+
+end
+
+
+
 % Axes
 
 
@@ -656,11 +764,6 @@ end
 % % Save the structure
 % guidata(figure_handle,myhandles)
 
-
-
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -678,6 +781,8 @@ end
 function removeAxesXTickLabels(ax)
 set(ax,'xticklabel',[])
 end
+
+
 
 
 

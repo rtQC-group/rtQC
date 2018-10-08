@@ -32,7 +32,7 @@ function defaults = rtQC_defaults()
 defaults = struct;
 
 defaults.spm_dir = '/Users/jheunis/Documents/MATLAB/spm12';
-defaults.img_fn = 'brain.png';
+defaults.img_fn = 'rtqc_logo2_black.png';
 % gui_data.structural_fn = '/Users/jheunis/Documents/MATLAB/rtQC/rtqc_jsh/0051210/anat_1/mprage.nii';
 % gui_data.functional4D_fn = '/Users/jheunis/Documents/MATLAB/rtQC/rtqc_jsh/0051210/rest_1/rest.nii';
 defaults.small_font_size = 10;

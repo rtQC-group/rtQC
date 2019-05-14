@@ -74,6 +74,15 @@ gui_data.edit_functional_pre.Callback = @editFunctional;
 gui_data.pb_functional_pre.Callback = @setFunctional;
 gui_data.pb_preproc.Callback = @runPreProc;
 
+gui_data.edit_roi1.Callback = @editROI1;
+gui_data.pb_roi1.Callback = @setROI1;
+gui_data.edit_roi2.Callback = @editROI2;
+gui_data.pb_roi2.Callback = @setROI2;
+gui_data.edit_roi1_pre.Callback = @editROI1;
+gui_data.pb_roi1_pre.Callback = @setROI1;
+gui_data.edit_roi2_pre.Callback = @editROI2;
+gui_data.pb_roi2_pre.Callback = @setROI2;
+
 set(findall(fig, '-property', 'Interruptible'), 'Interruptible', 'on')
 
 % Make figure visible after normalizing units
@@ -186,7 +195,7 @@ function setFunctional(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
 cd(gui_data.root_dir)
-[filename, pathname] = uigetfile('*.nii', 'Select the 4D FUNCTIONAL IMAGE file');
+[filename, pathname] = uigetfile('*.nii', 'Select the 4D (or 1st 3D) FUNCTIONAL IMAGE file');
 if filename ~= 0
     gui_data.functional4D_fn = [pathname filename];
     gui_data.edit_functional.String = gui_data.functional4D_fn;
@@ -195,6 +204,46 @@ end
 assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 end
+
+function editROI1(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+end
+
+function setROI1(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+cd(gui_data.root_dir)
+[filename, pathname] = uigetfile('*.nii', 'Select the 3D FUNCTIONAL IMAGE file');
+if filename ~= 0
+    gui_data.ROI1_fn = [pathname filename];
+    gui_data.edit_roi1.String = gui_data.ROI1_fn;
+    gui_data.edit_roi1_pre.String = gui_data.ROI1_fn;
+end
+assignin('base', 'gui_data', gui_data)
+guidata(fig, gui_data);
+end
+
+function editROI2(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+end
+
+function setROI2(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+cd(gui_data.root_dir)
+[filename, pathname] = uigetfile('*.nii', 'Select the 3D FUNCTIONAL IMAGE file');
+if filename ~= 0
+    gui_data.ROI2_fn = [pathname filename];
+    gui_data.edit_roi2.String = gui_data.ROI2_fn;
+    gui_data.edit_roi2_pre.String = gui_data.ROI2_fn;
+end
+assignin('base', 'gui_data', gui_data)
+guidata(fig, gui_data);
+end
+
+
 
 
 
@@ -247,6 +296,10 @@ end
 
 
 
+
+
+
+
 function initialize(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
@@ -255,15 +308,32 @@ if gui_data.preProc_status ~= 1
     errordlg('Please first complete the preprocessing in the PRE-NF QC tab','Preprocessing not done!');
     return;
 end
-gui_data.functional0_fn = [gui_data.functional4D_fn ',1'];
-gui_data.f4D_img = spm_read_vols(spm_vol(gui_data.functional4D_fn));
-[gui_data.Ni, gui_data.Nj, gui_data.Nk, gui_data.Nt] = size(gui_data.f4D_img);
-gui_data.Ndims = [gui_data.Ni; gui_data.Nj; gui_data.Nk];
-gui_data.slice_number = floor(gui_data.Nk/2);
-[dir, fn, ext] = fileparts(gui_data.functional4D_fn);
-if ~exist([dir filesep fn '_00001' ext],'file')
-    gui_data.f4D_img_spm = spm_file_split(gui_data.functional4D_fn);
+
+img_spm = spm_vol(gui_data.functional4D_fn);
+img_size = size(img_spm);
+if img_size(1) > 1
+    % if 4D image was entered
+    gui_data.functional0_fn = [gui_data.functional4D_fn ',1'];
+    gui_data.f4D_img = spm_read_vols(spm_vol(gui_data.functional4D_fn));
+    [dir, fn, ext] = fileparts(gui_data.functional4D_fn);
+    if ~exist([dir filesep fn '_00001' ext],'file')
+        gui_data.f4D_img_spm = spm_file_split(gui_data.functional4D_fn);
+    end
+    gui_data.f3D_img = gui_data.f4D_img(:,:,:,1);
+    [gui_data.Ni, gui_data.Nj, gui_data.Nk, gui_data.Nt] = size(gui_data.f4D_img);
+else
+    % if 3D image was entered
+    gui_data.functional0_fn = gui_data.functional4D_fn;
+    gui_data.f3D_img = spm_read_vols(spm_vol(gui_data.functional0_fn));
+    [gui_data.Ni, gui_data.Nj, gui_data.Nk] = size(gui_data.f3D_img);
+    gui_data.Nt = gui_data.Nt_default;
 end
+gui_data.Ndims = [gui_data.Ni; gui_data.Nj; gui_data.Nk];
+gui_data.slice_numbers = floor(gui_data.Ndims/2);
+gui_data.fmax = max(max(max(gui_data.f3D_img)));
+gui_data.tmax = 150;
+gui_data.prev_dim = 3; % selected dimension for image volume in previous iteration, default = Z
+
 % real-time realign and reslice parameters
 gui_data.use_rt = 1;
 gui_data.flagsSpmRealign = struct('quality',.9,'fwhm',5,'sep',4,...
@@ -280,8 +350,8 @@ gui_data.R(1,1).mat = gui_data.matTemplMotCorr;
 gui_data.R(1,1).dim = gui_data.dimTemplMotCorr;
 gui_data.R(1,1).Vol = gui_data.imgVolTempl;
 gui_data.nrSkipVol = 0;
-gui_data.F_dyn_img = gui_data.f4D_img(:,:,:,1);
-gui_data.tSNR_dyn_img = gui_data.f4D_img(:,:,:,1);
+gui_data.F_dyn_img = gui_data.f3D_img;
+gui_data.tSNR_dyn_img = gui_data.f3D_img;
 gui_data.FD_outliers = []; % Outlier volumes
 gui_data.FD_sum = 0;
 gui_data.outlier_counter = 0; % Outlier counter
@@ -358,7 +428,21 @@ hold on;
 gui_data.plot_line1 = line([1 gui_data.Nt],[gui_data.line1_pos gui_data.line1_pos],  'Color', 'b', 'LineWidth', 2 );
 gui_data.plot_line2 = line([1 gui_data.Nt],[gui_data.line2_pos gui_data.line2_pos],  'Color', 'g', 'LineWidth', 2 );
 hold off;
-removeAxesTicks(gui_data.ax_volumes);
+gui_data.img_volumesX = imagesc(gui_data.ax_volumesX, squeeze(gui_data.f3D_img(gui_data.slice_numbers(1),:,:)));
+gui_data.img_volumesY = imagesc(gui_data.ax_volumesY, squeeze(gui_data.f3D_img(:,gui_data.slice_numbers(2),:)));
+gui_data.img_volumesZ = imagesc(gui_data.ax_volumesZ, squeeze(gui_data.f3D_img(:,:,gui_data.slice_numbers(3))));
+set(gui_data.ax_volumesX, 'Clim', [0 gui_data.fmax])
+set(gui_data.ax_volumesY, 'Clim', [0 gui_data.fmax])
+set(gui_data.ax_volumesZ, 'Clim', [0 gui_data.fmax])
+colormap(gui_data.ax_volumesX, 'bone');
+colormap(gui_data.ax_volumesY, 'bone');
+colormap(gui_data.ax_volumesZ, 'bone');
+colorbar(gui_data.ax_volumesX);
+colorbar(gui_data.ax_volumesY);
+colorbar(gui_data.ax_volumesZ);
+removeAxesTicks(gui_data.ax_volumesX);
+removeAxesTicks(gui_data.ax_volumesY);
+removeAxesTicks(gui_data.ax_volumesZ);
 gui_data.RT_status = 'initialized';
 [gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
 assignin('base', 'gui_data', gui_data)
@@ -394,7 +478,8 @@ while gui_data.i < (gui_data.Nt+1)
     txt_dyn.String = ['#' num2str(gui_data.i)];
     
     % 0: Load dynamic functional image
-    fdyn_fn = [d filesep f '_' sprintf('%05d',gui_data.i) e]; % filename of dynamic functional image
+%     fdyn_fn = [d filesep f '_' sprintf('%05d',gui_data.i) e]; % filename of dynamic functional image
+    fdyn_fn = [d filesep 'fanon-0007-' sprintf('%05d',gui_data.i) '-' sprintf('%06d',gui_data.i) '-01' e]; % filename of dynamic functional image
     currentVol = spm_vol(fdyn_fn);
     gui_data.F_dyn_img = spm_read_vols(currentVol); % this is the unprocessed image to be used for DVARS and THEPLOT
     gui_data.F_dyn(:,gui_data.i) = gui_data.F_dyn_img(:);
@@ -547,12 +632,51 @@ while gui_data.i < (gui_data.Nt+1)
     
     t7_start = clock;
     
+    gui_data_tmp = guidata(fig);
+    dim = gui_data_tmp.popup_setDim.Value;
+    disp(num2str(dim))
+    
+    if dim == 1
+        gui_data.img_volumesX.Visible = 'on'; gui_data.ax_volumesX.Visible = 'on';
+        gui_data.img_volumesY.Visible = 'off'; gui_data.ax_volumesY.Visible = 'off';
+        gui_data.img_volumesZ.Visible = 'off'; gui_data.ax_volumesZ.Visible = 'off';
+    elseif dim == 2
+        gui_data.img_volumesX.Visible = 'off'; gui_data.ax_volumesX.Visible = 'off';
+        gui_data.img_volumesY.Visible = 'on'; gui_data.ax_volumesY.Visible = 'on';
+        gui_data.img_volumesZ.Visible = 'off'; gui_data.ax_volumesZ.Visible = 'off';
+    else
+        gui_data.img_volumesX.Visible = 'off'; gui_data.ax_volumesX.Visible = 'off';
+        gui_data.img_volumesY.Visible = 'off'; gui_data.ax_volumesY.Visible = 'off';
+        gui_data.img_volumesZ.Visible = 'on'; gui_data.ax_volumesZ.Visible = 'on';
+    end
+    
+    if gui_data.prev_dim == dim
+        gui_data.slice_numbers(dim) = gui_data_tmp.sld_slice.Value;
+        gui_data.slice_numbers(dim) = min(gui_data.slice_numbers(dim), gui_data.Ndims(dim));
+    else
+        gui_data_tmp.sld_slice.Value = gui_data.slice_numbers(dim);
+        
+    end
+    
+    gui_data.sld_slice.SliderStep = [1/gui_data.Ndims(dim) 1/gui_data.Ndims(dim)];
+    gui_data.txt_slice.String = ['Change slice: #' num2str(gui_data.slice_numbers(dim))];
+%     gui_data.sld_slice.Value = gui_data.slice_numbers(dim);
+    gui_data.sld_slice.Max = gui_data.Ndims(dim);
+    gui_data.prev_dim = dim;
+    guidata(fig,gui_data);
+    
+%     gui_data.sld_slice.Value = gui_data.slice_numbers(dim);
+%     gui_data.sld_slice.Max = gui_data.Ndims(gui_data.popup_setDim.Value);
+%     gui_data.sld_slice.SliderStep = [1/gui_data.Ndims(dim) 1/gui_data.Ndims(dim)];
+%     gui_data.txt_slice.String = ['Change slice: #' num2str(gui_data.slice_numbers(dim))];
+%     drawnow;
+%     guidata(fig,gui_data);
+    
     drawFD(fig);
     drawtSNR(fig);
     drawTHEPLOT(fig);
-    checkVolumeSettings(fig);
     drawBrains(fig);
-    
+
     gui_data.T(gui_data.i,7) = etime(clock,t7_start);
     gui_data.T(gui_data.i,8) = etime(clock,t0_start);
     
@@ -629,15 +753,7 @@ end
 
 
 function setDim(hObject,eventdata)
-% fig = ancestor(hObject,'figure');
-% gui_data = guidata(fig);
-% gui_data.sld_slice.Max = gui_data.Ndims(gui_data.popup_setDim.Value);
-% gui_data.slice_number = floor(gui_data.Ndims(gui_data.popup_setDim.Value)/2);
-% gui_data.sld_slice.Value = gui_data.slice_number;
-% gui_data.sld_slice.Max = Ndims(gui_data.popup_setDim.Value);
-% gui_data.sld_slice.SliderStep = [1/gui_data.Ndims(gui_data.popup_setDim.Value) 1/gui_data.Ndims(gui_data.popup_setDim.Value)];
-% gui_data.txt_slice.String = ['Change slice: #' num2str(gui_data.slice_number)];
-% guidata(fig, gui_data);
+
 end
 
 
@@ -656,25 +772,29 @@ end
 function changeSlice(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
-gui_data.slice_number = round(hObject.Value);
-gui_data.slice_number = min(gui_data.slice_number, gui_data.Ndims(gui_data.popup_setDim.Value));
-gui_data.txt_slice.String = ['Change slice: #' num2str(gui_data.slice_number)];
+dim = gui_data.popup_setDim.Value;
+gui_data.slice_numbers(dim) = round(hObject.Value);
+gui_data.slice_numbers(dim) = min(gui_data.slice_numbers(dim), gui_data.Ndims(dim));
+gui_data.txt_slice.String = ['Change slice: #' num2str(gui_data.slice_numbers(dim))];
+gui_data.sld_slice.Value = gui_data.slice_numbers(dim);
+gui_data.sld_slice.Max = gui_data.Ndims(gui_data.popup_setDim.Value);
+gui_data.sld_slice.SliderStep = [1/gui_data.Ndims(dim) 1/gui_data.Ndims(dim)];
+% gui_data.txt_slice.String = ['Change slice: #' num2str(gui_data.slice_numbers(dim))];
+drawnow;
 % assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
-
 end
 
 
 function checkVolumeSettings(fig)
-gui_data = guidata(fig);
-
-
-dimension = gui_data.popup_setDim.Value;
-
-gui_data.sld_slice.Max = gui_data.Ndims(dimension);
-gui_data.slice_number = floor(gui_data.Ndims(gui_data.popup_setDim.Value)/2);
-gui_data.sld_slice.Value = gui_data.slice_number;
-gui_data.sld_slice.Max = gui_data.Ndims(gui_data.popup_setDim.Value);
+% gui_data = guidata(fig);
+% % dimension = gui_data.popup_setDim.Value;
+% % 
+% % gui_data.sld_slice.Max = gui_data.Ndims(dimension);
+% % gui_data.slice_number = floor(gui_data.Ndims(gui_data.popup_setDim.Value)/2);
+% gui_data.sld_slice.Value = gui_data.slice_number;
+% gui_data.sld_slice.Max = gui_data.Ndims(gui_data.popup_setDim.Value);
+% guidata(fig, gui_data);
 
 end
 
@@ -682,23 +802,29 @@ function drawBrains(fig)
 gui_data = guidata(fig);
 
 if gui_data.popup_setImg.Value == 1
-    if gui_data.popup_setDim.Value == 1
-        imagesc(gui_data.ax_volumes, squeeze(gui_data.F_dyn_img(gui_data.slice_number,:,:))); colormap(gui_data.ax_volumes, 'bone'); colorbar(gui_data.ax_volumes);
-    elseif gui_data.popup_setDim.Value == 2
-        imagesc(gui_data.ax_volumes, squeeze(gui_data.F_dyn_img(:,gui_data.slice_number,:))); colormap(gui_data.ax_volumes, 'bone'); colorbar(gui_data.ax_volumes);
-    else
-        imagesc(gui_data.ax_volumes, squeeze(gui_data.F_dyn_img(:,:,gui_data.slice_number)));  colormap(gui_data.ax_volumes, 'bone'); colorbar(gui_data.ax_volumes);
-    end
+    set(gui_data.img_volumesX, 'CData', squeeze(gui_data.F_dyn_img(gui_data.slice_numbers(1),:,:)));
+    set(gui_data.img_volumesY, 'CData', squeeze(gui_data.F_dyn_img(:,gui_data.slice_numbers(2),:)));
+    set(gui_data.img_volumesZ, 'CData', squeeze(gui_data.F_dyn_img(:,:,gui_data.slice_numbers(3))));
+    set(gui_data.ax_volumesX, 'Clim', [0 gui_data.fmax])
+    set(gui_data.ax_volumesY, 'Clim', [0 gui_data.fmax])
+    set(gui_data.ax_volumesZ, 'Clim', [0 gui_data.fmax])
+    colormap(gui_data.ax_volumesX, 'bone');
+    colormap(gui_data.ax_volumesY, 'bone');
+    colormap(gui_data.ax_volumesZ, 'bone');
 else
-    if gui_data.popup_setDim.Value == 1
-        imagesc(gui_data.ax_volumes, squeeze(gui_data.tSNR_dyn_img(gui_data.slice_number,:,:))); colormap(gui_data.ax_volumes, 'bone'); colorbar(gui_data.ax_volumes);
-    elseif gui_data.popup_setDim.Value == 2
-        imagesc(gui_data.ax_volumes, squeeze(gui_data.tSNR_dyn_img(:,gui_data.slice_number,:))); colormap(gui_data.ax_volumes, 'bone'); colorbar(gui_data.ax_volumes);
-    else
-        imagesc(gui_data.ax_volumes, squeeze(gui_data.tSNR_dyn_img(:,:,gui_data.slice_number)));  colormap(gui_data.ax_volumes, 'bone'); colorbar(gui_data.ax_volumes);
-    end
+    set(gui_data.img_volumesX, 'CData', squeeze(gui_data.tSNR_dyn_img(gui_data.slice_numbers(1),:,:)));
+    set(gui_data.img_volumesY, 'CData', squeeze(gui_data.tSNR_dyn_img(:,gui_data.slice_numbers(2),:)));
+    set(gui_data.img_volumesZ, 'CData', squeeze(gui_data.tSNR_dyn_img(:,:,gui_data.slice_numbers(3))));
+    set(gui_data.ax_volumesX, 'Clim', [0 gui_data.tmax])
+    set(gui_data.ax_volumesY, 'Clim', [0 gui_data.tmax])
+    set(gui_data.ax_volumesZ, 'Clim', [0 gui_data.tmax])
+    colormap(gui_data.ax_volumesX, 'hot');
+    colormap(gui_data.ax_volumesY, 'hot');
+    colormap(gui_data.ax_volumesZ, 'hot');
 end
-gui_data.ax_volumes.Title.String = '';
+
+drawnow;
+% gui_data.ax_volumes.Title.String = '';
 % assignin('base', 'gui_data', gui_data)
 % guidata(fig, gui_data);
 

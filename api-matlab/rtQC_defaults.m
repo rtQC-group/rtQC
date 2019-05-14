@@ -30,11 +30,9 @@
 function defaults = rtQC_defaults()
 
 defaults = struct;
-
+defaults.start_clean = 0; % set to 1 if sample data filenames should not be populated
 defaults.spm_dir = '/Users/jheunis/Documents/MATLAB/spm12';
 defaults.img_fn = 'rtqc_logo2_black.png';
-% gui_data.structural_fn = '/Users/jheunis/Documents/MATLAB/rtQC/rtqc_jsh/0051210/anat_1/mprage.nii';
-% gui_data.functional4D_fn = '/Users/jheunis/Documents/MATLAB/rtQC/rtqc_jsh/0051210/rest_1/rest.nii';
 defaults.small_font_size = 10;
 defaults.standard_font_size = 13;
 defaults.button_font_size = 13;
@@ -43,6 +41,6 @@ defaults.axes_font_size = 12;
 defaults.vals_font_size = 16;
 defaults.Ndims = [50 50 50];
 defaults.slice_number = 20;
-
+defaults.Nt_default = 155; % from sample data
 defaults.FD_threshold = 0.25; % in mm
 

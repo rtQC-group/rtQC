@@ -35,10 +35,25 @@ defaults.spm_dir = '/Users/jheunis/Documents/MATLAB/spm12';
 defaults.img_fn = 'rtqc_logo2_black.png';
 defaults.small_font_size = 10;
 defaults.standard_font_size = 13;
+defaults.medium_font_size = 16;
 defaults.button_font_size = 13;
 defaults.large_font_size = 24;
 defaults.axes_font_size = 12;
 defaults.vals_font_size = 16;
+defaults.panel_defaults_string = ['Please specify settings necessary for OnlineQC, including directory locations ' ...
+    'threshold values and sample data selections. The framewise displacement (FD) threshold is set at the minimum value that ' ...
+    'would classify a volume as a motion outlier (typically ranging from 0.2 to 0.5 mm)'];
+defaults.panel_preproc_string = ['Before Online QC can commence, structural and functional data have to ' ...
+    'reside in the same subject space such that structural masks (e.g. gray matter) can be mapped in real-time. ' ...
+    'Please specify pre-real-time collected structural and functional data and run the preprocessing pipeline (note: this can take several minutes).'];
+defaults.panel_roi_string = ['If you are interested in tracking quality metrics within specific regions of interest (ROIs), ' ...
+    'please load the image volumes (note: these are assumed to be in register with the subject''s pre-collected functional data).'];
+defaults.panel_qchecks_string = '';
+
+
+
+
+
 defaults.Ndims = [50 50 50];
 defaults.slice_number = 20;
 defaults.Nt_default = 155; % from sample data

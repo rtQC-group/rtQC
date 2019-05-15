@@ -142,7 +142,7 @@ web(url, '-browser')
 end
 
 function linkToDocs(hObject,eventdata)
-f = msgbox('This button could link to a readthedocs page that serves as rtQC documentation');
+f = msgbox('Documentation coming soon!');
 end
 
 function gotoTab1(hObject,eventdata)

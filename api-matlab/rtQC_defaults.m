@@ -31,6 +31,8 @@ function defaults = rtQC_defaults()
 
 defaults = struct;
 defaults.start_clean = 0; % set to 1 if sample data filenames should not be populated
+defaults.sample_set = 2; % 0 for no sample set; 1 for OpenNFT task data; 2 for HCP resting state data
+defaults.use_WMSCF = 0;
 defaults.spm_dir = '/Users/jheunis/Documents/MATLAB/spm12';
 defaults.img_fn = 'rtqc_logo2_black.png';
 defaults.small_font_size = 10;
@@ -49,11 +51,6 @@ defaults.panel_preproc_string = ['Before Online QC can commence, structural and 
 defaults.panel_roi_string = ['If you are interested in tracking quality metrics within specific regions of interest (ROIs), ' ...
     'please load the image volumes (note: these are assumed to be in register with the subject''s pre-collected functional data).'];
 defaults.panel_qchecks_string = '';
-
-
-
-
-
 defaults.Ndims = [50 50 50];
 defaults.slice_number = 20;
 defaults.Nt_default = 155; % from sample data

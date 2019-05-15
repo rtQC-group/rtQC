@@ -42,19 +42,6 @@ gui_data.root_dir = gui_data.folders{1};
 for i = 2:(numel(gui_data.folders)-2)
     gui_data.root_dir = [gui_data.root_dir filesep gui_data.folders{i}];
 end
-gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-opennft';
-% gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-opennft';
-if ~defaults.start_clean
-    gui_data.structural_fn = [gui_data.data_dir filesep 'structScan_PSC.nii'];
-    gui_data.functional4D_fn = [gui_data.data_dir filesep 'fanon-0007-00001-000001-01.nii'];
-    gui_data.ROI1_fn = [gui_data.data_dir filesep 'lROI_1.nii'];
-    gui_data.ROI2_fn = [gui_data.data_dir filesep 'rROI_2.nii'];
-else
-    gui_data.structural_fn = '';
-    gui_data.functional4D_fn = '';
-    gui_data.ROI1_fn = '';
-    gui_data.ROI2_fn = '';
-end
 
 % -- gui_data.RT_status = {'initialized', 'running', 'stopped', 'completed'}
 gui_data.preProc_status = 0; % 0 = not done; 1 = done;

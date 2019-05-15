@@ -46,6 +46,27 @@ fields = fieldnames(defaults);
 for i=1:numel(fields)
     gui_data.(fields{i}) = defaults.(fields{i});
 end
+% Populate data if required
+if ~gui_data.start_clean
+    if gui_data.sample_set == 1
+        gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-opennft';
+        gui_data.structural_fn = [gui_data.data_dir filesep 'structScan_PSC.nii'];
+        gui_data.functional4D_fn = [gui_data.data_dir filesep 'fanon-0007-00001-000001-01.nii'];
+        gui_data.ROI1_fn = [gui_data.data_dir filesep 'lROI_1.nii'];
+        gui_data.ROI2_fn = [gui_data.data_dir filesep 'rROI_2.nii'];
+    else
+        gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-hcp';
+        gui_data.structural_fn = [gui_data.data_dir filesep 'mprage.nii'];
+        gui_data.functional4D_fn = [gui_data.data_dir filesep 'rest.nii'];
+        gui_data.ROI1_fn = '';
+        gui_data.ROI2_fn = '';
+    end
+else
+    gui_data.structural_fn = '';
+    gui_data.functional4D_fn = '';
+    gui_data.ROI1_fn = '';
+    gui_data.ROI2_fn = '';
+end
 
 % Setup all UIcontrols and GUI components
 rtQC_display_setup;
@@ -93,7 +114,7 @@ set(findall(fig, '-property', 'Units'), 'Units', 'Normalized')
 fig.Visible = 'on';
 % Save GUI data to workspace
 gui_data = guidata(fig);
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 end
 
 
@@ -131,7 +152,7 @@ switch newTabName
     otherwise
         %
 end
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data)
 end
 
@@ -170,7 +191,7 @@ else
     gui_data.edit_fd_threshold_defaults.String = txt;
 end
 
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data)
 end
 
@@ -189,7 +210,7 @@ if dirname ~= 0
     gui_data.spm_dir = dirname;
     gui_data.edit_spm_defaults.String = dirname;
 end
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 end
 
@@ -210,7 +231,7 @@ if filename ~= 0
     gui_data.edit_structural.String = gui_data.structural_fn;
     gui_data.edit_structural_pre.String = gui_data.structural_fn;
 end
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 end
 
@@ -229,7 +250,7 @@ if filename ~= 0
     gui_data.edit_functional.String = gui_data.functional4D_fn;
     gui_data.edit_functional_pre.String = gui_data.functional4D_fn;
 end
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 end
 
@@ -248,7 +269,7 @@ if filename ~= 0
     gui_data.edit_roi1.String = gui_data.ROI1_fn;
     gui_data.edit_roi1_pre.String = gui_data.ROI1_fn;
 end
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 end
 
@@ -267,7 +288,7 @@ if filename ~= 0
     gui_data.edit_roi2.String = gui_data.ROI2_fn;
     gui_data.edit_roi2_pre.String = gui_data.ROI2_fn;
 end
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 end
 
@@ -431,7 +452,7 @@ gui_data.X_Func_detrending = gui_data.X_MP_detrending;
 gui_data.MP = zeros(gui_data.Nt,6);
 gui_data.MP_detrended = zeros(gui_data.Nt,6);
 gui_data.MP_mm = zeros(gui_data.Nt,6);
-% gui_data.outlier_reg = zeros(1, gui_data.Nt);
+gui_data.outlier_reg = zeros(1, gui_data.Nt);
 % gui_data.outlier_reg_Ydata = zeros(2, gui_data.Nt);
 % Initialize axes
 gui_data.plot_FD = plot(gui_data.ax_FD, gui_data.t, gui_data.FD, 'c', 'LineWidth', 2);
@@ -482,9 +503,9 @@ removeAxesTicks(gui_data.ax_volumesY);
 removeAxesTicks(gui_data.ax_volumesZ);
 gui_data.RT_status = 'initialized';
 [gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data);
-msgbox('Initialized for real-time operation');
+% msgbox('Initialized for real-time operation');
 end
 
 
@@ -503,7 +524,7 @@ gui_data.RT_status = 'running';
 [gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
 
 guidata(fig,gui_data);
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 [d, f, e] = fileparts(gui_data.functional4D_fn);
 
 
@@ -513,10 +534,15 @@ while gui_data.i < (gui_data.Nt+1)
     gui_data = guidata(fig);
     t0_start = clock;
     txt_dyn.String = ['#' num2str(gui_data.i)];
-    
     % 0: Load dynamic functional image
-%     fdyn_fn = [d filesep f '_' sprintf('%05d',gui_data.i) e]; % filename of dynamic functional image
-    fdyn_fn = [d filesep 'fanon-0007-' sprintf('%05d',gui_data.i) '-' sprintf('%06d',gui_data.i) '-01' e]; % filename of dynamic functional image
+    if gui_data.sample_set == 1
+        fdyn_fn = [d filesep 'fanon-0007-' sprintf('%05d',gui_data.i) '-' sprintf('%06d',gui_data.i) '-01' e]; % filename of dynamic functional image
+    elseif gui_data.sample_set == 2
+        fdyn_fn = [d filesep f '_' sprintf('%05d',gui_data.i) e]; % filename of dynamic functional image
+    else
+        % Insert custom dynamic filename here
+    end
+    
     currentVol = spm_vol(fdyn_fn);
     gui_data.F_dyn_img = spm_read_vols(currentVol); % this is the unprocessed image to be used for DVARS and THEPLOT
     gui_data.F_dyn(:,gui_data.i) = gui_data.F_dyn_img(:);
@@ -677,7 +703,6 @@ while gui_data.i < (gui_data.Nt+1)
     
     gui_data_tmp = guidata(fig);
     dim = gui_data_tmp.popup_setDim.Value;
-    disp(num2str(dim))
     
     if dim == 1
         gui_data.img_volumesX.Visible = 'on'; gui_data.ax_volumesX.Visible = 'on';
@@ -731,14 +756,15 @@ while gui_data.i < (gui_data.Nt+1)
     drawnow; % one way operation to allow gui itself to update (not to allow other parallel operations to finish processing)
     
     % update guidata - TODO
-    if strcmp(gui_data_tmp.RT_status, 'stopped')
-        gui_data.RT_status = gui_data_tmp.RT_status;
-        assignin('base', 'gui_data', gui_data)
+    if strcmp(gui_data_tmp.RT_status, 'stopped') || (gui_data.i == gui_data.Nt+1)
+        gui_data.RT_status = 'stopped';
+%         assignin('base', 'gui_data', gui_data)
         guidata(fig,gui_data);
         break;
     end
-    assignin('base', 'gui_data', gui_data)
+%     assignin('base', 'gui_data', gui_data)
     guidata(fig,gui_data);
+   
 end
 
 gui_data.RT_status = 'completed';
@@ -759,7 +785,7 @@ gui_data = guidata(fig);
 gui_data.RT_status = 'stopped';
 [gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
 
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data);
 end
 
@@ -936,11 +962,14 @@ if gui_data.preProc_status ~= 1
     errordlg('Please first complete the preprocessing in the PRE-NF QC tab','Preprocessing not done!');
     return;
 end
-gui_data.output_dir = '/Users/jheunis/Documents/MATLAB/rtQC/rtqc_jsh/0051210';
-cd(gui_data.output_dir)
+if ~isfield(gui_data, 'qc_out_dir') || ~exist(gui_data.qc_out_dir, 'dir')
+    gui_data.qc_out_dir = [gui_data.data_dir filesep 'rtQC_output'];
+    mkdir(gui_data.qc_out_dir)
+end
+cd(gui_data.qc_out_dir)
 
 % Gaussian kernel smoothing of unprocessed data
-gui_data.fwhm =6;
+gui_data.fwhm = 6;
 [d, f, e] = fileparts(gui_data.functional4D_fn);
 gui_data.sfunctional4D_fn = [d filesep 's' f e];
 if ~exist(gui_data.sfunctional4D_fn, 'file')
@@ -1074,14 +1103,31 @@ fprintf(fid, '\n<TABLE><TR><TD><img src="tsnr_brain.png" alt="no picture" width=
 fprintf(fid, '\n<TABLE><TR><TD><img src="mask_contour.png" alt="no picture" width=700 height=700></TD></TR></TABLE>' );
 fclose(fid);
 gui_data.offline_qc = offline_qc;
-url = ['file:///' gui_data.output_dir filesep log_name];
+url = ['file:///' gui_data.qc_out_dir filesep log_name];
 web(url, '-browser')
 
-assignin('base', 'gui_data', gui_data)
+% assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 
 end
 
+function showFDoutliers(fig)
+gui_data = guidata(fig);
+
+figure('position', [100 100 500 900], 'units','normalized');
+gui_data.outlier_reg(gui_data.FD_outliers) = 1;
+im = imagesc(gui_data.outlier_reg');
+title(['FD outliers (white) based on threshold of ' num2str(gui_data.FD_threshold) ' mm per volume'])
+ylabel('Time')
+colormap gray; colorbar;
+
+if ~isfield(gui_data, 'qc_out_dir') || ~exist(gui_data.qc_out_dir, 'dir')
+    gui_data.qc_out_dir = [gui_data.data_dir filesep 'rtQC_output'];
+    mkdir(gui_data.qc_out_dir)
+end
+dlmwrite([gui_data.qc_out_dir filesep 'FD_outliers_regressor.txt'], gui_data.outlier_reg')
+
+end
 
 
 

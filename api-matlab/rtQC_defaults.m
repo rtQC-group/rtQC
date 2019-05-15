@@ -50,7 +50,10 @@ defaults.panel_preproc_string = ['Before Online QC can commence, structural and 
     'Please specify pre-real-time collected structural and functional data and run the preprocessing pipeline (note: this can take several minutes).'];
 defaults.panel_roi_string = ['If you are interested in tracking quality metrics within specific regions of interest (ROIs), ' ...
     'please load the image volumes (note: these are assumed to be in register with the subject''s pre-collected functional data).'];
-defaults.panel_qchecks_string = '';
+defaults.panel_dqchecks_string = ['Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ' ...
+    'ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ' ...
+    'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.'];
+
 defaults.Ndims = [50 50 50];
 defaults.slice_number = 20;
 defaults.Nt_default = 155; % from sample data

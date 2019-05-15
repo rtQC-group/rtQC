@@ -83,6 +83,8 @@ gui_data.pb_structural.Callback = @setStructural;
 gui_data.edit_functional.Callback = @editFunctional;
 gui_data.pb_functional.Callback = @setFunctional;
 gui_data.edit_fd_threshold.Callback = @editFDthreshold;
+gui_data.pb_continue_to_online.Callback = @gotoTab2;
+
 gui_data.pb_initialize.Callback = @initialize;
 gui_data.pb_startRT.Callback = @startRT;
 gui_data.pb_stopRT.Callback = @stopRT;
@@ -141,12 +143,12 @@ switch newTabName
             gui_data.txt_Nvolume_post.String = ['Acquired volumes:  ' num2str(gui_data.Nt)];
             valid_percentage = round(gui_data.Nvolume_valid/gui_data.Nt*100, 1);
             gui_data.txt_Nvolume_valid_post.String = ['Valid volumes:  ' num2str(gui_data.Nvolume_valid) '/' num2str(gui_data.Nt) ' (' num2str(valid_percentage) '%)'];
-            gui_data.txt_fdsum_post.String = ['Total FD:  ' num2str(gui_data.FD_sum)];
-            gui_data.txt_fdave_post.String = ['Mean FD:  ' num2str(gui_data.FD_dynamic_average)];
-            gui_data.txt_tsnr_post.String = ['tSNR (brain):  ' num2str(gui_data.tSNR(gui_data.Nt))];
-            gui_data.txt_tsnr_gm_post.String = ['tSNR (GM):  ' num2str(gui_data.tSNR_gm(gui_data.Nt))];
-            gui_data.txt_tsnr_wm_post.String = ['tSNR (WM):  ' num2str(gui_data.tSNR_wm(gui_data.Nt))];
-            gui_data.txt_tsnr_csf_post.String = ['tSNR (CSF):  ' num2str(gui_data.tSNR_csf(gui_data.Nt))];
+            gui_data.txt_fdsum_post.String = ['Total FD:  ' num2str(round(gui_data.FD_sum,2))];
+            gui_data.txt_fdave_post.String = ['Mean FD:  ' num2str(round(gui_data.FD_dynamic_average,2))];
+            gui_data.txt_tsnr_post.String = ['tSNR (brain):  ' num2str(round(gui_data.tSNR(gui_data.i),2))];
+            gui_data.txt_tsnr_gm_post.String = ['tSNR (GM):  ' num2str(round(gui_data.tSNR_gm(gui_data.i),2))];
+            gui_data.txt_tsnr_wm_post.String = ['tSNR (WM):  ' num2str(round(gui_data.tSNR_wm(gui_data.i),2))];
+            gui_data.txt_tsnr_csf_post.String = ['tSNR (CSF):  ' num2str(round(gui_data.tSNR_csf(gui_data.i),2))];
         end
         %
     otherwise
@@ -173,6 +175,12 @@ gui_data.tgroup.SelectedTab = gui_data.tab_pre;
 guidata(fig,gui_data)
 end
 
+function gotoTab2(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+gui_data.tgroup.SelectedTab = gui_data.tab_online;
+guidata(fig,gui_data)
+end
 
 
 function editFDthreshold(hObject,eventdata)
@@ -692,12 +700,12 @@ while gui_data.i < (gui_data.Nt+1)
     gui_data.Nvolume_valid = gui_data.i - gui_data.outlier_counter;
     valid_percentage = round(gui_data.Nvolume_valid/gui_data.i*100, 1);
     gui_data.txt_Nvolume_valid.String = ['Valid volumes:  ' num2str(gui_data.Nvolume_valid) '/' num2str(gui_data.i) ' (' num2str(valid_percentage) '%)'];
-    gui_data.txt_fdsum.String = ['Total FD:  ' num2str(gui_data.FD_sum)];
-    gui_data.txt_fdave.String = ['Mean FD:  ' num2str(gui_data.FD_dynamic_average)];
-    gui_data.txt_tsnr.String = ['tSNR (brain):  ' num2str(gui_data.tSNR(gui_data.i))];
-    gui_data.txt_tsnr_gm.String = ['tSNR (GM):  ' num2str(gui_data.tSNR_gm(gui_data.i))];
-    gui_data.txt_tsnr_wm.String = ['tSNR (WM):  ' num2str(gui_data.tSNR_wm(gui_data.i))];
-    gui_data.txt_tsnr_csf.String = ['tSNR (CSF):  ' num2str(gui_data.tSNR_csf(gui_data.i))];
+    gui_data.txt_fdsum.String = ['Total FD:  ' num2str(round(gui_data.FD_sum,2))];
+    gui_data.txt_fdave.String = ['Mean FD:  ' num2str(round(gui_data.FD_dynamic_average,2))];
+    gui_data.txt_tsnr.String = ['tSNR (brain):  ' num2str(round(gui_data.tSNR(gui_data.i),2))];
+    gui_data.txt_tsnr_gm.String = ['tSNR (GM):  ' num2str(round(gui_data.tSNR_gm(gui_data.i),2))];
+    gui_data.txt_tsnr_wm.String = ['tSNR (WM):  ' num2str(round(gui_data.tSNR_wm(gui_data.i),2))];
+    gui_data.txt_tsnr_csf.String = ['tSNR (CSF):  ' num2str(round(gui_data.tSNR_csf(gui_data.i),2))];
     
     t7_start = clock;
     
@@ -1059,64 +1067,88 @@ offline_qc.tSNR_3D_masked = reshape(offline_qc.tSNR_2D_masked, gui_data.Ni, gui_
 % Create montages of 3D images
 montage2 = rtQC_createMontage(offline_qc.F3D_mean, 5, 1, 'Mean EPI (whole image)', 'gray', 'off');
 print(montage2.f, 'mean_epi', '-dpng')
+im1 = imagesc(gui_data.ax_epimean_offline, montage2.image); colormap(gui_data.ax_epimean_offline, 'gray');
+
 montage3 = rtQC_createMontage(offline_qc.F3D_stddev, 5, 1, 'Standard deviation (whole image)', 'parula', 'off');
 print(montage3.f, 'stddev_epi', '-dpng')
+im2 = imagesc(gui_data.ax_epistddev_offline, montage3.image); colormap(gui_data.ax_epistddev_offline, 'parula');
+
 montage1 = rtQC_createMontage(offline_qc.tSNR_3D, 5, 1, 'tSNR (whole image)', 'hot', 'off');
 print(montage1.f, 'tsnr_whole', '-dpng')
+im3 = imagesc(gui_data.ax_tsnrwhole_offline, montage1.image); colormap(gui_data.ax_tsnrwhole_offline, 'hot');
+
 montage4 = rtQC_createMontage(offline_qc.tSNR_3D_masked, 5, 1, 'tSNR (brain)', 'hot', 'off');
 print(montage4.f, 'tsnr_brain', '-dpng')
+im4 = imagesc(gui_data.ax_tsnrbrain_offline, montage4.image); colormap(gui_data.ax_tsnrbrain_offline, 'hot');
+
 figmask = rtQC_displayMaskContour(offline_qc.F3D_mean, offline_qc.mask_3D, 0, 3, 'off');
 print(figmask, 'mask_contour', '-dpng')
+% im5 = imagesc(gui_data.ax_registration_offline, figmask);
+
 % close montage1.f montage2.f montage3.f montage4.f
-% Create HTML log file
-gui_data.subject_id = 'subj1';
-dt = datetime('now');
-[Y,MO,D,H,MI,S] = datevec(dt);
-dt_str = [num2str(Y) num2str(MO) num2str(D) num2str(H) num2str(MI) num2str(round(S))];
-t = datestr(dt);
-log_name = [gui_data.subject_id '_' dt_str '.html'];
-fid = fopen(log_name,'a');
-fprintf(fid, '<H2>Log</H2>');
-fprintf(fid, ['\n<BR>Subject:  ' gui_data.subject_id]);
-fprintf(fid, ['\n<BR>Date/time:  ' t]);
-fprintf(fid, '<H2>Imaging info</H2>');
-fprintf(fid, ['\nVolumes:  ' num2str(gui_data.Nt)]);
-fprintf(fid, ['\n<BR>Voxels (x,y,z):  ' num2str(gui_data.Ni) ', ' num2str(gui_data.Nj) ', ' num2str(gui_data.Nk)]);
-fprintf(fid, '<H2>Timeseries summary</H2>');
-fprintf(fid, '\n<TABLE><TR><TD><img src="timeseries_summary.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-fprintf(fid, '<H2>QC Metrics</H2>');
-fprintf(fid, ['\nFD threshold (mm):  ' num2str(gui_data.FD_threshold)]);
-fprintf(fid, ['\n<BR>FD outliers:  ' num2str(numel(offline_qc.FD_measures.FD_outliers_ind))]);
-fprintf(fid, ['\n<BR>Total FD:  ' num2str(offline_qc.FD_measures.FD_sum)]);
-fprintf(fid, ['\n<BR>Mean FD:  ' num2str(offline_qc.FD_measures.FD_mean)]);
-fprintf(fid, ['\n<BR>Mean Zscore:  ' num2str(offline_qc.Zstat_mean)]);
-fprintf(fid, ['\n<BR>GCOR:  ' num2str(offline_qc.GCOR)]);
-fprintf(fid, ['\n<BR>tSNR (brain):  ' num2str(offline_qc.tSNR_brain)]);
-fprintf(fid, ['\n<BR>tSNR (GM):  ' num2str(offline_qc.tSNR_GM)]);
-fprintf(fid, ['\n<BR>tSNR (WM):  ' num2str(offline_qc.tSNR_WM)]);
-fprintf(fid, ['\n<BR>tSNR (CSF):  ' num2str(offline_qc.tSNR_CSF)]);
-fprintf(fid, '<H2>QC brain images</H2>');
-fprintf(fid, '\n<TABLE><TR><TD><img src="mean_epi.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-fprintf(fid, '\n<TABLE><TR><TD><img src="stddev_epi.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-fprintf(fid, '\n<TABLE><TR><TD><img src="tsnr_whole.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-fprintf(fid, '\n<TABLE><TR><TD><img src="tsnr_brain.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-fprintf(fid, '\n<TABLE><TR><TD><img src="mask_contour.png" alt="no picture" width=700 height=700></TD></TR></TABLE>' );
-fclose(fid);
+
+
+
+
+% 
+% % Create HTML log file
+% gui_data.subject_id = 'subj1';
+% dt = datetime('now');
+% [Y,MO,D,H,MI,S] = datevec(dt);
+% dt_str = [num2str(Y) num2str(MO) num2str(D) num2str(H) num2str(MI) num2str(round(S))];
+% t = datestr(dt);
+% log_name = [gui_data.subject_id '_' dt_str '.html'];
+% fid = fopen(log_name,'a');
+% fprintf(fid, '<H2>Log</H2>');
+% fprintf(fid, ['\n<BR>Subject:  ' gui_data.subject_id]);
+% fprintf(fid, ['\n<BR>Date/time:  ' t]);
+% fprintf(fid, '<H2>Imaging info</H2>');
+% fprintf(fid, ['\nVolumes:  ' num2str(gui_data.Nt)]);
+% fprintf(fid, ['\n<BR>Voxels (x,y,z):  ' num2str(gui_data.Ni) ', ' num2str(gui_data.Nj) ', ' num2str(gui_data.Nk)]);
+% fprintf(fid, '<H2>Timeseries summary</H2>');
+% fprintf(fid, '\n<TABLE><TR><TD><img src="timeseries_summary.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+% fprintf(fid, '<H2>QC Metrics</H2>');
+% fprintf(fid, ['\nFD threshold (mm):  ' num2str(gui_data.FD_threshold)]);
+% fprintf(fid, ['\n<BR>FD outliers:  ' num2str(numel(offline_qc.FD_measures.FD_outliers_ind))]);
+% fprintf(fid, ['\n<BR>Total FD:  ' num2str(offline_qc.FD_measures.FD_sum)]);
+% fprintf(fid, ['\n<BR>Mean FD:  ' num2str(offline_qc.FD_measures.FD_mean)]);
+% fprintf(fid, ['\n<BR>Mean Zscore:  ' num2str(offline_qc.Zstat_mean)]);
+% fprintf(fid, ['\n<BR>GCOR:  ' num2str(offline_qc.GCOR)]);
+% fprintf(fid, ['\n<BR>tSNR (brain):  ' num2str(offline_qc.tSNR_brain)]);
+% fprintf(fid, ['\n<BR>tSNR (GM):  ' num2str(offline_qc.tSNR_GM)]);
+% fprintf(fid, ['\n<BR>tSNR (WM):  ' num2str(offline_qc.tSNR_WM)]);
+% fprintf(fid, ['\n<BR>tSNR (CSF):  ' num2str(offline_qc.tSNR_CSF)]);
+% fprintf(fid, '<H2>QC brain images</H2>');
+% fprintf(fid, '\n<TABLE><TR><TD><img src="mean_epi.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+% fprintf(fid, '\n<TABLE><TR><TD><img src="stddev_epi.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+% fprintf(fid, '\n<TABLE><TR><TD><img src="tsnr_whole.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+% fprintf(fid, '\n<TABLE><TR><TD><img src="tsnr_brain.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+% fprintf(fid, '\n<TABLE><TR><TD><img src="mask_contour.png" alt="no picture" width=700 height=700></TD></TR></TABLE>' );
+% fclose(fid);
 gui_data.offline_qc = offline_qc;
-url = ['file:///' gui_data.qc_out_dir filesep log_name];
-web(url, '-browser')
+% url = ['file:///' gui_data.qc_out_dir filesep log_name];
+% web(url, '-browser')
 
 % assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 
 end
 
-function showFDoutliers(fig)
+function generateReport(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+
+gui_data = guidata(fig);
+
+end
+
+function showFDoutliers(hObject,eventdata)
+fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
 
 figure('position', [100 100 500 900], 'units','normalized');
 gui_data.outlier_reg(gui_data.FD_outliers) = 1;
 im = imagesc(gui_data.outlier_reg');
+removeAxesXTickLabels(gca);
 title(['FD outliers (white) based on threshold of ' num2str(gui_data.FD_threshold) ' mm per volume'])
 ylabel('Time')
 colormap gray; colorbar;

@@ -61,11 +61,15 @@ if ~gui_data.start_clean
         gui_data.ROI1_fn = '';
         gui_data.ROI2_fn = '';
     end
+    gui_data.im1_dqchecks_fn = '';
+    gui_data.im2_dqchecks_fn = '';
 else
     gui_data.structural_fn = '';
     gui_data.functional4D_fn = '';
     gui_data.ROI1_fn = '';
     gui_data.ROI2_fn = '';
+    gui_data.im1_dqchecks_fn = '';
+    gui_data.im2_dqchecks_fn = '';
 end
 
 % Setup all UIcontrols and GUI components
@@ -156,6 +160,9 @@ switch newTabName
 end
 % assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data)
+end
+
+function QCtabChangedCallback(hObject, eventdata)
 end
 
 

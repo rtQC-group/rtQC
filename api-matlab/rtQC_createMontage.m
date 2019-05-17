@@ -24,6 +24,7 @@ montage = struct;
 if rotate
     for p = 1:Nk
         img(:,:,p) = rot90(img(:,:,p));
+%         mask_img(:,:,p) = rot90(mask_img(:,:,p));
     end
 end
 

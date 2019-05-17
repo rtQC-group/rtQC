@@ -82,12 +82,22 @@ gui_data.pb_start.Callback = @gotoTab1;
 gui_data.edit_fd_threshold_defaults.Callback = @editFDthreshold;
 gui_data.edit_spm_defaults.Callback = @editSPMdir;
 gui_data.pb_spm_defaults.Callback = @setSPMdir;
+gui_data.edit_outdir_defaults.Callback = @editOUTdir;
+gui_data.pb_outdir_defaults.Callback = @setOUTdir;
 gui_data.edit_structural.Callback = @editStructural;
 gui_data.pb_structural.Callback = @setStructural;
 gui_data.edit_functional.Callback = @editFunctional;
 gui_data.pb_functional.Callback = @setFunctional;
 gui_data.edit_fd_threshold.Callback = @editFDthreshold;
+gui_data.pb_selectData1.Callback = @selectData1;
+gui_data.pb_selectData2.Callback = @selectData2;
 gui_data.pb_continue_to_online.Callback = @gotoTab2;
+gui_data.edit_im1_dqchecks.Callback = @editIM1dqchecks;
+gui_data.pb_im1_dqchecks.Callback = @setIM1dqchecks;
+gui_data.edit_im2_dqchecks.Callback = @editIM2dqchecks;
+gui_data.pb_im2_dqchecks.Callback = @setIM2dqchecks;
+gui_data.pb_xtc_qa.Callback = @openXTCqa;
+gui_data.pb_xtc_nii.Callback = @openXTCnii;
 
 gui_data.pb_initialize.Callback = @initialize;
 gui_data.pb_startRT.Callback = @startRT;
@@ -112,6 +122,10 @@ gui_data.edit_roi1_pre.Callback = @editROI1;
 gui_data.pb_roi1_pre.Callback = @setROI1;
 gui_data.edit_roi2_pre.Callback = @editROI2;
 gui_data.pb_roi2_pre.Callback = @setROI2;
+
+gui_data.QCtgroup.SelectionChangedFcn = @QCtabChangedCallback;
+gui_data.pb_open_qc_post.Callback = @generateReport;
+
 
 set(findall(fig, '-property', 'Interruptible'), 'Interruptible', 'on')
 
@@ -142,7 +156,7 @@ switch newTabName
         %
     case hObject.Children(4).Title
         if strcmp(gui_data.RT_status, 'completed') ~= 1
-            msgbox('Offline QC is only possible once online QC has been completed');
+            errordlg('Offline QC is only possible once online QC has been completed');
         else
             gui_data.txt_Nvolume_post.String = ['Acquired volumes:  ' num2str(gui_data.Nt)];
             valid_percentage = round(gui_data.Nvolume_valid/gui_data.Nt*100, 1);
@@ -229,6 +243,24 @@ end
 guidata(fig, gui_data);
 end
 
+function editOUTdir(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+end
+
+function setOUTdir(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+% cd(gui_data.root_dir)
+dirname = uigetdir(gui_data.root_dir, 'Select the OUTPUT directory');
+if dirname ~= 0
+    gui_data.qc_out_dir = dirname;
+    gui_data.edit_outdir_defaults.String = dirname;
+end
+% assignin('base', 'gui_data', gui_data)
+guidata(fig, gui_data);
+end
+
 
 
 function editStructural(hObject,eventdata)
@@ -269,6 +301,66 @@ end
 guidata(fig, gui_data);
 end
 
+function selectData1(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+
+gui_data.pb_selectData1.String = ['Task ' char(hex2dec('2713'))];
+gui_data.pb_selectData2.String = 'Rest';
+gui_data.sample_set = 1;
+gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-opennft';
+gui_data.qc_out_dir = [gui_data.data_dir filesep 'rtQC_output'];
+gui_data.structural_fn = [gui_data.data_dir filesep 'structScan_PSC.nii'];
+gui_data.functional4D_fn = [gui_data.data_dir filesep 'fanon-0007-00001-000001-01.nii'];
+gui_data.ROI1_fn = [gui_data.data_dir filesep 'lROI_1.nii'];
+gui_data.ROI2_fn = [gui_data.data_dir filesep 'rROI_2.nii'];
+gui_data.edit_structural.String = gui_data.structural_fn;
+gui_data.edit_structural_pre.String = gui_data.structural_fn;
+gui_data.edit_functional.String = gui_data.functional4D_fn;
+gui_data.edit_functional_pre.String = gui_data.functional4D_fn;
+gui_data.edit_roi1.String = gui_data.ROI1_fn;
+gui_data.edit_roi1_pre.String = gui_data.ROI1_fn;
+gui_data.edit_roi2.String = gui_data.ROI2_fn;
+gui_data.edit_roi2_pre.String = gui_data.ROI2_fn;
+
+gui_data.txt_preproc1_status.String = '-';
+gui_data.txt_preproc2_status.String = '-';
+gui_data.txt_preproc3_status.String = '-';
+gui_data.preProc_status = 0;
+
+guidata(fig, gui_data);
+end
+
+
+function selectData2(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+gui_data.pb_selectData1.String = 'Task';
+gui_data.pb_selectData2.String = ['Rest ' char(hex2dec('2713'))];
+gui_data.sample_set = 2;
+gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-hcp';
+gui_data.structural_fn = [gui_data.data_dir filesep 'mprage.nii'];
+gui_data.functional4D_fn = [gui_data.data_dir filesep 'rest.nii'];
+gui_data.ROI1_fn = '';
+gui_data.ROI2_fn = '';
+gui_data.edit_structural.String = gui_data.structural_fn;
+gui_data.edit_structural_pre.String = gui_data.structural_fn;
+gui_data.edit_functional.String = gui_data.functional4D_fn;
+gui_data.edit_functional_pre.String = gui_data.functional4D_fn;
+gui_data.edit_roi1.String = gui_data.ROI1_fn;
+gui_data.edit_roi1_pre.String = gui_data.ROI1_fn;
+gui_data.edit_roi2.String = gui_data.ROI2_fn;
+gui_data.edit_roi2_pre.String = gui_data.ROI2_fn;
+
+gui_data.txt_preproc1_status.String = '-';
+gui_data.txt_preproc2_status.String = '-';
+gui_data.txt_preproc3_status.String = '-';
+gui_data.preProc_status = 0;
+
+guidata(fig, gui_data);
+end
+
+
 function editROI1(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
@@ -307,6 +399,52 @@ end
 guidata(fig, gui_data);
 end
 
+
+function editIM1dqchecks(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+end
+
+function setIM1dqchecks(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+cd(gui_data.root_dir)
+[filename, pathname] = uigetfile('*.nii', 'Select 3D FUNCTIONAL IMAGE #1');
+if filename ~= 0
+    gui_data.im1_dqchecks_fn = [pathname filename];
+    gui_data.edit_im1_dqchecks.String = gui_data.im1_dqchecks_fn;
+end
+guidata(fig, gui_data);
+end
+
+function editIM2dqchecks(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+end
+
+function setIM2dqchecks(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+cd(gui_data.root_dir)
+[filename, pathname] = uigetfile('*.nii', 'Select 3D FUNCTIONAL IMAGE #2');
+if filename ~= 0
+    gui_data.im2_dqchecks_fn = [pathname filename];
+    gui_data.edit_im2_dqchecks.String = gui_data.im2_dqchecks_fn;
+end
+guidata(fig, gui_data);
+end
+
+function openXTCqa(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+open(gui_data.xtc_qa_fn )
+end
+
+function openXTCnii(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+open(gui_data.xtc_nii_fn)
+end
 
 
 
@@ -977,8 +1115,11 @@ if gui_data.preProc_status ~= 1
     errordlg('Please first complete the preprocessing in the PRE-NF QC tab','Preprocessing not done!');
     return;
 end
-if ~isfield(gui_data, 'qc_out_dir') || ~exist(gui_data.qc_out_dir, 'dir')
+
+if ~isfield(gui_data, 'qc_out_dir')
     gui_data.qc_out_dir = [gui_data.data_dir filesep 'rtQC_output'];
+end
+if ~exist(gui_data.qc_out_dir, 'dir')
     mkdir(gui_data.qc_out_dir)
 end
 cd(gui_data.qc_out_dir)
@@ -1034,34 +1175,47 @@ offline_qc.CSF_img = offline_qc.F2D_psc(gui_data.I_CSF, :);
 offline_qc.all_img = [offline_qc.GM_img; offline_qc.WM_img; offline_qc.CSF_img];
 line1_pos = numel(gui_data.I_GM);
 line2_pos = numel(gui_data.I_GM) + numel(gui_data.I_WM);
+
 tf = figure('visible', 'off');
 fontsizeL = 14;
 fontsizeM = 11;
+
 ax1 = subplot(7,1,4:7);
 imagesc(ax1, offline_qc.all_img); colormap(gray); caxis(offline_qc.intensity_scale);
-title(ax1, 'thePlotSpm','fontsize',fontsizeL)
+title(ax1, 'The Plot','fontsize',fontsizeL)
 ylabel(ax1, 'Voxels','fontsize',fontsizeM)
 xlabel(ax1, 'fMRI volumes','fontsize',fontsizeM)
 hold on; line([1 gui_data.Nt],[line1_pos line1_pos],  'Color', 'b', 'LineWidth', 2 )
 line([1 gui_data.Nt],[line2_pos line2_pos],  'Color', 'r', 'LineWidth', 2 )
 hold off;
+imagesc(gui_data.ax_thePlot_offline, offline_qc.all_img); colormap(gray); caxis(offline_qc.intensity_scale);
+hold on; line([1 gui_data.Nt],[line1_pos line1_pos],  'Color', 'b', 'LineWidth', 2 )
+line([1 gui_data.Nt],[line2_pos line2_pos],  'Color', 'r', 'LineWidth', 2 )
+hold off;
+
 ax2 = subplot(7,1,1);
 plot(ax2, offline_qc.FD_measures.FD, 'LineWidth', 2); grid;
 set(ax2,'Xticklabel',[]);
 title(ax2, 'FD','fontsize',fontsizeL)
 ylabel(ax2, 'mm','fontsize',fontsizeM)
+plot(gui_data.ax_FD_offline, offline_qc.FD_measures.FD, 'LineWidth', 2);
+
 ax3 = subplot(7,1,2);
 plot(ax3, offline_qc.DVARS, 'LineWidth', 2); grid;
 set(ax3,'Xticklabel',[]);
 title(ax3, 'DVARS','fontsize',fontsizeL)
 ylabel(ax3, 'a.u.','fontsize',fontsizeM)
+plot(gui_data.ax_DVARS_offline, offline_qc.DVARS, 'LineWidth', 2);
+
 ax4 = subplot(7,1,3);
 plot(ax4, offline_qc.F2D_zstat_mean, 'LineWidth', 2); grid;
 set(ax4,'Xticklabel',[]);
 title(ax4, 'Z-score','fontsize',fontsizeL)
 ylabel(ax4, 'a.u.','fontsize',fontsizeM)
+plot(gui_data.ax_globalZ_offline, offline_qc.F2D_zstat_mean, 'LineWidth', 2);
 print(tf, 'timeseries_summary', '-dpng')
 close(tf)
+
 % Prepare 3D and 4D images
 offline_qc.mask_3D = reshape(gui_data.mask_reshaped, gui_data.Ni, gui_data.Nj, gui_data.Nk);
 offline_qc.tSNR_3D = reshape(offline_qc.tSNR_2D, gui_data.Ni, gui_data.Nj, gui_data.Nk);
@@ -1094,47 +1248,7 @@ print(figmask, 'mask_contour', '-dpng')
 
 % close montage1.f montage2.f montage3.f montage4.f
 
-
-
-
-% 
-% % Create HTML log file
-% gui_data.subject_id = 'subj1';
-% dt = datetime('now');
-% [Y,MO,D,H,MI,S] = datevec(dt);
-% dt_str = [num2str(Y) num2str(MO) num2str(D) num2str(H) num2str(MI) num2str(round(S))];
-% t = datestr(dt);
-% log_name = [gui_data.subject_id '_' dt_str '.html'];
-% fid = fopen(log_name,'a');
-% fprintf(fid, '<H2>Log</H2>');
-% fprintf(fid, ['\n<BR>Subject:  ' gui_data.subject_id]);
-% fprintf(fid, ['\n<BR>Date/time:  ' t]);
-% fprintf(fid, '<H2>Imaging info</H2>');
-% fprintf(fid, ['\nVolumes:  ' num2str(gui_data.Nt)]);
-% fprintf(fid, ['\n<BR>Voxels (x,y,z):  ' num2str(gui_data.Ni) ', ' num2str(gui_data.Nj) ', ' num2str(gui_data.Nk)]);
-% fprintf(fid, '<H2>Timeseries summary</H2>');
-% fprintf(fid, '\n<TABLE><TR><TD><img src="timeseries_summary.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-% fprintf(fid, '<H2>QC Metrics</H2>');
-% fprintf(fid, ['\nFD threshold (mm):  ' num2str(gui_data.FD_threshold)]);
-% fprintf(fid, ['\n<BR>FD outliers:  ' num2str(numel(offline_qc.FD_measures.FD_outliers_ind))]);
-% fprintf(fid, ['\n<BR>Total FD:  ' num2str(offline_qc.FD_measures.FD_sum)]);
-% fprintf(fid, ['\n<BR>Mean FD:  ' num2str(offline_qc.FD_measures.FD_mean)]);
-% fprintf(fid, ['\n<BR>Mean Zscore:  ' num2str(offline_qc.Zstat_mean)]);
-% fprintf(fid, ['\n<BR>GCOR:  ' num2str(offline_qc.GCOR)]);
-% fprintf(fid, ['\n<BR>tSNR (brain):  ' num2str(offline_qc.tSNR_brain)]);
-% fprintf(fid, ['\n<BR>tSNR (GM):  ' num2str(offline_qc.tSNR_GM)]);
-% fprintf(fid, ['\n<BR>tSNR (WM):  ' num2str(offline_qc.tSNR_WM)]);
-% fprintf(fid, ['\n<BR>tSNR (CSF):  ' num2str(offline_qc.tSNR_CSF)]);
-% fprintf(fid, '<H2>QC brain images</H2>');
-% fprintf(fid, '\n<TABLE><TR><TD><img src="mean_epi.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-% fprintf(fid, '\n<TABLE><TR><TD><img src="stddev_epi.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-% fprintf(fid, '\n<TABLE><TR><TD><img src="tsnr_whole.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-% fprintf(fid, '\n<TABLE><TR><TD><img src="tsnr_brain.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
-% fprintf(fid, '\n<TABLE><TR><TD><img src="mask_contour.png" alt="no picture" width=700 height=700></TD></TR></TABLE>' );
-% fclose(fid);
 gui_data.offline_qc = offline_qc;
-% url = ['file:///' gui_data.qc_out_dir filesep log_name];
-% web(url, '-browser')
 
 % assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
@@ -1143,8 +1257,44 @@ end
 
 function generateReport(hObject,eventdata)
 fig = ancestor(hObject,'figure');
-
 gui_data = guidata(fig);
+
+% Create HTML log file
+gui_data.subject_id = 'subj1';
+dt = datetime('now');
+[Y,MO,D,H,MI,S] = datevec(dt);
+dt_str = [num2str(Y) num2str(MO) num2str(D) num2str(H) num2str(MI) num2str(round(S))];
+t = datestr(dt);
+log_name = [gui_data.subject_id '_' dt_str '.html'];
+fid = fopen(log_name,'a');
+fprintf(fid, '<H2>Log</H2>');
+fprintf(fid, ['\n<BR>Subject:  ' gui_data.subject_id]);
+fprintf(fid, ['\n<BR>Date/time:  ' t]);
+fprintf(fid, '<H2>Imaging info</H2>');
+fprintf(fid, ['\nVolumes:  ' num2str(gui_data.Nt)]);
+fprintf(fid, ['\n<BR>Voxels (x,y,z):  ' num2str(gui_data.Ni) ', ' num2str(gui_data.Nj) ', ' num2str(gui_data.Nk)]);
+fprintf(fid, '<H2>Timeseries summary</H2>');
+fprintf(fid, '\n<TABLE><TR><TD><img src="timeseries_summary.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+fprintf(fid, '<H2>QC Metrics</H2>');
+fprintf(fid, ['\nFD threshold (mm):  ' num2str(gui_data.FD_threshold)]);
+fprintf(fid, ['\n<BR>FD outliers:  ' num2str(numel(offline_qc.FD_measures.FD_outliers_ind))]);
+fprintf(fid, ['\n<BR>Total FD:  ' num2str(offline_qc.FD_measures.FD_sum)]);
+fprintf(fid, ['\n<BR>Mean FD:  ' num2str(offline_qc.FD_measures.FD_mean)]);
+fprintf(fid, ['\n<BR>Mean Zscore:  ' num2str(offline_qc.Zstat_mean)]);
+fprintf(fid, ['\n<BR>GCOR:  ' num2str(offline_qc.GCOR)]);
+fprintf(fid, ['\n<BR>tSNR (brain):  ' num2str(offline_qc.tSNR_brain)]);
+fprintf(fid, ['\n<BR>tSNR (GM):  ' num2str(offline_qc.tSNR_GM)]);
+fprintf(fid, ['\n<BR>tSNR (WM):  ' num2str(offline_qc.tSNR_WM)]);
+fprintf(fid, ['\n<BR>tSNR (CSF):  ' num2str(offline_qc.tSNR_CSF)]);
+fprintf(fid, '<H2>QC brain images</H2>');
+fprintf(fid, '\n<TABLE><TR><TD><img src="mean_epi.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+fprintf(fid, '\n<TABLE><TR><TD><img src="stddev_epi.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+fprintf(fid, '\n<TABLE><TR><TD><img src="tsnr_whole.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+fprintf(fid, '\n<TABLE><TR><TD><img src="tsnr_brain.png" alt="no picture" width=700 height=600></TD></TR></TABLE>' );
+fprintf(fid, '\n<TABLE><TR><TD><img src="mask_contour.png" alt="no picture" width=700 height=700></TD></TR></TABLE>' );
+fclose(fid);
+url = ['file:///' gui_data.qc_out_dir filesep log_name];
+web(url, '-browser')
 
 end
 
@@ -1160,8 +1310,10 @@ title(['FD outliers (white) based on threshold of ' num2str(gui_data.FD_threshol
 ylabel('Time')
 colormap gray; colorbar;
 
-if ~isfield(gui_data, 'qc_out_dir') || ~exist(gui_data.qc_out_dir, 'dir')
+if ~isfield(gui_data, 'qc_out_dir')
     gui_data.qc_out_dir = [gui_data.data_dir filesep 'rtQC_output'];
+end
+if ~exist(gui_data.qc_out_dir, 'dir')
     mkdir(gui_data.qc_out_dir)
 end
 dlmwrite([gui_data.qc_out_dir filesep 'FD_outliers_regressor.txt'], gui_data.outlier_reg')

@@ -96,6 +96,8 @@ gui_data.edit_im1_dqchecks.Callback = @editIM1dqchecks;
 gui_data.pb_im1_dqchecks.Callback = @setIM1dqchecks;
 gui_data.edit_im2_dqchecks.Callback = @editIM2dqchecks;
 gui_data.pb_im2_dqchecks.Callback = @setIM2dqchecks;
+gui_data.pb_checkReg_dqchecks.Callback = @checkRegDQ;
+gui_data.pb_MI_dqchecks.Callback = @calcAndDispMI;
 gui_data.pb_xtc_qa.Callback = @openXTCqa;
 gui_data.pb_xtc_nii.Callback = @openXTCnii;
 
@@ -163,10 +165,10 @@ switch newTabName
             gui_data.txt_Nvolume_valid_post.String = ['Valid volumes:  ' num2str(gui_data.Nvolume_valid) '/' num2str(gui_data.Nt) ' (' num2str(valid_percentage) '%)'];
             gui_data.txt_fdsum_post.String = ['Total FD:  ' num2str(round(gui_data.FD_sum,2))];
             gui_data.txt_fdave_post.String = ['Mean FD:  ' num2str(round(gui_data.FD_dynamic_average,2))];
-            gui_data.txt_tsnr_post.String = ['tSNR (brain):  ' num2str(round(gui_data.tSNR(gui_data.i),2))];
-            gui_data.txt_tsnr_gm_post.String = ['tSNR (GM):  ' num2str(round(gui_data.tSNR_gm(gui_data.i),2))];
-            gui_data.txt_tsnr_wm_post.String = ['tSNR (WM):  ' num2str(round(gui_data.tSNR_wm(gui_data.i),2))];
-            gui_data.txt_tsnr_csf_post.String = ['tSNR (CSF):  ' num2str(round(gui_data.tSNR_csf(gui_data.i),2))];
+            gui_data.txt_tsnr_post.String = ['tSNR (brain):  ' num2str(round(gui_data.tSNR(gui_data.Nt),2))];
+            gui_data.txt_tsnr_gm_post.String = ['tSNR (GM):  ' num2str(round(gui_data.tSNR_gm(gui_data.Nt),2))];
+            gui_data.txt_tsnr_wm_post.String = ['tSNR (WM):  ' num2str(round(gui_data.tSNR_wm(gui_data.Nt),2))];
+            gui_data.txt_tsnr_csf_post.String = ['tSNR (CSF):  ' num2str(round(gui_data.tSNR_csf(gui_data.Nt),2))];
         end
         %
     otherwise
@@ -310,6 +312,7 @@ gui_data.pb_selectData2.String = 'Rest';
 gui_data.sample_set = 1;
 gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-opennft';
 gui_data.qc_out_dir = [gui_data.data_dir filesep 'rtQC_output'];
+gui_data.edit_outdir_defaults.String = gui_data.qc_out_dir ;
 gui_data.structural_fn = [gui_data.data_dir filesep 'structScan_PSC.nii'];
 gui_data.functional4D_fn = [gui_data.data_dir filesep 'fanon-0007-00001-000001-01.nii'];
 gui_data.ROI1_fn = [gui_data.data_dir filesep 'lROI_1.nii'];
@@ -339,6 +342,8 @@ gui_data.pb_selectData1.String = 'Task';
 gui_data.pb_selectData2.String = ['Rest ' char(hex2dec('2713'))];
 gui_data.sample_set = 2;
 gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-hcp';
+gui_data.qc_out_dir = [gui_data.data_dir filesep 'rtQC_output'];
+gui_data.edit_outdir_defaults.String = gui_data.qc_out_dir ;
 gui_data.structural_fn = [gui_data.data_dir filesep 'mprage.nii'];
 gui_data.functional4D_fn = [gui_data.data_dir filesep 'rest.nii'];
 gui_data.ROI1_fn = '';
@@ -434,6 +439,36 @@ end
 guidata(fig, gui_data);
 end
 
+
+function checkRegDQ(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+if isempty(gui_data.im1_dqchecks_fn) || isempty(gui_data.im2_dqchecks_fn)
+    errordlg('Please select two images (online and offline) to compare');
+    return;
+end
+spm_check_registration(gui_data.im1_dqchecks_fn, gui_data.im2_dqchecks_fn)
+end
+
+function calcAndDispMI(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+if isempty(gui_data.im1_dqchecks_fn) || isempty(gui_data.im2_dqchecks_fn)
+    errordlg('Please select two images (online and offline) to compare');
+    return;
+end
+
+msgbox('Functionality to be added: plot 2D histogram and display mutual information measure');
+% slice_nr = 20;
+% im1 = spm_read_vols(spm_vol(gui_data.im1_dqchecks_fn));
+% im2 = spm_read_vols(spm_vol(gui_data.im2_dqchecks_fn));
+% slice_im1 = squeeze(im1(:,:, slice_nr));
+% slice_im2 = squeeze(im2(:,:, slice_nr));
+% [M, out] = MI_GG(slice_im1, slice_im2);
+
+end
+
+
 function openXTCqa(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
@@ -505,6 +540,14 @@ end
 function initialize(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
+gui_data.txt_Nvolume.String = 'Acquired volumes:  0';
+gui_data.txt_Nvolume_valid.String = 'Valid volumes:  0';
+gui_data.txt_fdsum.String = 'Total FD:  0';
+gui_data.txt_fdave.String = 'Mean FD:  0';
+gui_data.txt_tsnr.String = 'tSNR (brain):  0';
+gui_data.txt_tsnr_gm.String = 'tSNR (GM):  0';
+gui_data.txt_tsnr_wm.String = 'tSNR (WM):  0';
+gui_data.txt_tsnr_csf.String = 'tSNR (CSF):  0';
 % Check preprocessing of structural and f0 images
 if gui_data.preProc_status ~= 1
     errordlg('Please first complete the preprocessing in the PRE-NF QC tab','Preprocessing not done!');
@@ -526,6 +569,18 @@ if img_size(1) > 1
 else
     % if 3D image was entered
     gui_data.functional0_fn = gui_data.functional4D_fn;
+    % for opennft data specifically
+    if gui_data.sample_set == 1
+        gui_data.functional4D_fn = [gui_data.data_dir filesep 'fanon-0007.nii'];
+        if ~exist(gui_data.functional4D_fn, 'file')
+            vols = cell(gui_data.Nt_default,1);
+            for n = 1:gui_data.Nt_default
+                vols{n, 1} = [gui_data.data_dir filesep 'fanon-0007-' sprintf('%05d',n) '-' sprintf('%06d',n) '-01.nii'];
+            end
+            rtQC_3Dto4Dnii(vols, 2, gui_data.functional4D_fn)
+        end
+        gui_data.f4D_img = spm_read_vols(spm_vol(gui_data.functional4D_fn));
+    end
     gui_data.f3D_img = spm_read_vols(spm_vol(gui_data.functional0_fn));
     [gui_data.Ni, gui_data.Nj, gui_data.Nk] = size(gui_data.f3D_img);
     gui_data.Nt = gui_data.Nt_default;
@@ -574,6 +629,7 @@ gui_data.I_GM = find(gui_data.GM_img_bin);
 gui_data.I_WM = find(gui_data.WM_img_bin);
 gui_data.I_CSF = find(gui_data.CSF_img_bin);
 gui_data.mask_reshaped = gui_data.GM_img_bin | gui_data.WM_img_bin | gui_data.CSF_img_bin;
+gui_data.mask_3D = reshape(gui_data.mask_reshaped, gui_data.Ni, gui_data.Nj, gui_data.Nk);
 gui_data.I_mask = find(gui_data.mask_reshaped);
 gui_data.N_maskvox = numel(gui_data.I_mask);
 gui_data.N_vox = gui_data.Ni*gui_data.Nj*gui_data.Nk;
@@ -608,37 +664,76 @@ gui_data.MP_mm = zeros(gui_data.Nt,6);
 gui_data.outlier_reg = zeros(1, gui_data.Nt);
 % gui_data.outlier_reg_Ydata = zeros(2, gui_data.Nt);
 % Initialize axes
-gui_data.plot_FD = plot(gui_data.ax_FD, gui_data.t, gui_data.FD, 'c', 'LineWidth', 2);
-gui_data.fd_line1 = line(gui_data.ax_FD, [1 gui_data.Nt],[gui_data.FD_threshold gui_data.FD_threshold],  'Color', 'r', 'LineWidth', 1.5 );
+gui_data.plot_FD = plot(gui_data.ax_FD, gui_data.t, gui_data.FD, 'c', 'LineWidth', 1.5);
+gui_data.fd_line1 = line(gui_data.ax_FD, [1 gui_data.Nt],[gui_data.FD_threshold gui_data.FD_threshold],  'Color', 'r', 'LineWidth', 1);
 gui_data.ax_FD.XLim = [0 (gui_data.Nt+1)]; gui_data.ax_FD.YLim = [0 2];
 gui_data.ax_FD.XGrid = 'on'; gui_data.ax_FD.YGrid = 'on';
 gui_data.ax_FD.Color = 'k';
 gui_data.ax_FD.Title.String = gui_data.ax_FD_title;
 gui_data.ax_FD.YLabel.String = 'mm';
 removeAxesXTickLabels(gui_data.ax_FD)
-gui_data.plot_tSNR = plot(gui_data.ax_tSNR, gui_data.t, gui_data.tSNR, 'c', 'LineWidth', 2);
+gui_data.plot_tSNR = plot(gui_data.ax_tSNR, gui_data.t, gui_data.tSNR, 'c', 'LineWidth', 1.5);
 gui_data.ax_tSNR.XLim = [0 (gui_data.Nt+1)]; gui_data.ax_tSNR.YLim = [0 100];
 gui_data.ax_tSNR.XGrid = 'on'; gui_data.ax_tSNR.YGrid = 'on';
 gui_data.ax_tSNR.Color = 'k';
 gui_data.ax_tSNR.Title.String = gui_data.ax_tSNR_title;
 gui_data.ax_tSNR.YLabel.String = 'a.u.';
 removeAxesXTickLabels(gui_data.ax_tSNR)
-gui_data.plot_globalZ = plot(gui_data.ax_globalZ, gui_data.t, gui_data.F_zscore_mean, 'c', 'LineWidth', 2);
+gui_data.plot_globalZ = plot(gui_data.ax_globalZ, gui_data.t, gui_data.F_zscore_mean, 'c', 'LineWidth', 1.5);
 gui_data.ax_globalZ.XLim = [0 (gui_data.Nt+1)]; gui_data.ax_globalZ.YLim = [0 10];
 gui_data.ax_globalZ.XGrid = 'on'; gui_data.ax_tSNR.YGrid = 'on';
 gui_data.ax_globalZ.Color = 'k';
 gui_data.ax_globalZ.Title.String = gui_data.ax_globalZ_title;
 gui_data.ax_globalZ.YLabel.String = 'a.u.';
 removeAxesXTickLabels(gui_data.ax_globalZ)
+hold(gui_data.ax_tSNR, 'on')
+hold(gui_data.ax_globalZ, 'on')
+if gui_data.sample_set == 1
+    % hardcoding Nroi = 2, for the case of example Opennft sample data. To be
+    % changed.
+    
+    gui_data.zscore_ROI = cell(1,2);
+    gui_data.tSNR_ROI = cell(1,2);
+    roi_colors = ['m'; 'g'];
+    N_ROIs = numel(gui_data.tSNR_ROI);
+    for roi = 1:N_ROIs
+        gui_data.tSNR_ROI{roi} = nan(1, gui_data.Nt);
+        gui_data.zscore_ROI{roi} = nan(1, gui_data.Nt);
+        gui_data.plot_tSNR_ROI{roi} = plot(gui_data.ax_tSNR, gui_data.t, gui_data.tSNR_ROI{roi}, roi_colors(roi), 'LineWidth', 1.5);
+        gui_data.plot_zscore_ROI{roi} = plot(gui_data.ax_globalZ, gui_data.t, gui_data.zscore_ROI{roi}, roi_colors(roi), 'LineWidth', 1.5);
+    end
+    gui_data.txt_tsnr_wm.String = 'tSNR (ROI1):  0';
+    gui_data.txt_tsnr_csf.String = 'tSNR (ROI2):  0';
+    gui_data.txt_tsnr_wm.ForegroundColor = 'm';
+    gui_data.txt_tsnr_csf.ForegroundColor = 'g';
+    
+    gui_data.ax_tSNR.YLim = [0 150];
+    gui_data.ax_globalZ.YLim = [0 20];
+    
+    % ROI masking
+    gui_data.ROI_img = cell(1,N_ROIs);
+    gui_data.ROI_fns{1} = gui_data.ROI1_fn;
+    gui_data.ROI_fns{2} = gui_data.ROI2_fn;
+    for r = 1:N_ROIs
+        gui_data.ROI_img{r} = spm_read_vols(spm_vol(gui_data.ROI_fns{r}));
+        gui_data.ROI_img{r}(isnan(gui_data.ROI_img{r})) = 0;
+        gui_data.ROI_img{r} = (gui_data.ROI_img{r} >= 0.1);
+        gui_data.I_ROI{r} = find(gui_data.ROI_img{r}(:));
+    end
+end
+hold(gui_data.ax_tSNR, 'off')
+hold(gui_data.ax_globalZ, 'off')
 GM_img = gui_data.F_theplot(gui_data.I_GM, :);
 WM_img = gui_data.F_theplot(gui_data.I_WM, :);
 CSF_img = gui_data.F_theplot(gui_data.I_CSF, :);
 all_img = [GM_img; WM_img; CSF_img];
-gui_data.img_thePlot = imagesc(gui_data.ax_thePlot, all_img); colormap(gray); caxis([-5 5]);
-hold on;
-gui_data.plot_line1 = line([1 gui_data.Nt],[gui_data.line1_pos gui_data.line1_pos],  'Color', 'b', 'LineWidth', 2 );
-gui_data.plot_line2 = line([1 gui_data.Nt],[gui_data.line2_pos gui_data.line2_pos],  'Color', 'g', 'LineWidth', 2 );
-hold off;
+gui_data.img_thePlot = imagesc(gui_data.ax_thePlot, all_img); 
+colormap(gui_data.ax_thePlot, 'gray'); caxis(gui_data.ax_thePlot, [-5 5]);
+hold(gui_data.ax_thePlot, 'on');
+gui_data.plot_line1 = line(gui_data.ax_thePlot, [1 gui_data.Nt],[gui_data.line1_pos gui_data.line1_pos],  'Color', 'b', 'LineWidth', 2 );
+gui_data.plot_line2 = line(gui_data.ax_thePlot, [1 gui_data.Nt],[gui_data.line2_pos gui_data.line2_pos],  'Color', 'g', 'LineWidth', 2 );
+hold(gui_data.ax_thePlot, 'off');
+
 gui_data.img_volumesX = imagesc(gui_data.ax_volumesX, squeeze(gui_data.f3D_img(gui_data.slice_numbers(1),:,:)));
 gui_data.img_volumesY = imagesc(gui_data.ax_volumesY, squeeze(gui_data.f3D_img(:,gui_data.slice_numbers(2),:)));
 gui_data.img_volumesZ = imagesc(gui_data.ax_volumesZ, squeeze(gui_data.f3D_img(:,:,gui_data.slice_numbers(3))));
@@ -656,12 +751,10 @@ removeAxesTicks(gui_data.ax_volumesY);
 removeAxesTicks(gui_data.ax_volumesZ);
 gui_data.RT_status = 'initialized';
 [gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
-% assignin('base', 'gui_data', gui_data)
+assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data);
-% msgbox('Initialized for real-time operation');
+msgbox('Initialized for real-time operation');
 end
-
-
 
 
 
@@ -834,12 +927,16 @@ while gui_data.i < (gui_data.Nt+1)
     gui_data.FD_sum = gui_data.FD_sum + fd;
     gui_data.FD_dynamic_average = gui_data.FD_sum/gui_data.i;
     
-    
     gui_data.F_zscore(gui_data.I_mask, gui_data.i) = (gui_data.F_dyn(gui_data.I_mask, gui_data.i)-gui_data.F_cumulative_mean(gui_data.I_mask,gui_data.i))./gui_data.F_stdev(gui_data.I_mask, gui_data.i);
-    
     gui_data.F_zscore(isnan(gui_data.F_zscore(gui_data.I_mask, gui_data.i)), gui_data.i) = 0;
     gui_data.F_zscore_mean(1, gui_data.i) = mean(gui_data.F_zscore(gui_data.I_mask, gui_data.i));
     
+    if gui_data.sample_set == 1
+        gui_data.zscore_ROI{1}(1, gui_data.i) = mean(gui_data.F_zscore(gui_data.I_ROI{1}, gui_data.i));
+        gui_data.zscore_ROI{2}(1, gui_data.i) = mean(gui_data.F_zscore(gui_data.I_ROI{2}, gui_data.i));
+        gui_data.tSNR_ROI{1}(gui_data.i) = mean(gui_data.F_tSNR(gui_data.I_ROI{1}, gui_data.i));
+        gui_data.tSNR_ROI{2}(gui_data.i) = mean(gui_data.F_tSNR(gui_data.I_ROI{2}, gui_data.i));
+    end
     
     gui_data.txt_Nvolume.String = ['Acquired volumes:  ' num2str(gui_data.i) '/' num2str(gui_data.Nt)];
     gui_data.Nvolume_valid = gui_data.i - gui_data.outlier_counter;
@@ -849,8 +946,13 @@ while gui_data.i < (gui_data.Nt+1)
     gui_data.txt_fdave.String = ['Mean FD:  ' num2str(round(gui_data.FD_dynamic_average,2))];
     gui_data.txt_tsnr.String = ['tSNR (brain):  ' num2str(round(gui_data.tSNR(gui_data.i),2))];
     gui_data.txt_tsnr_gm.String = ['tSNR (GM):  ' num2str(round(gui_data.tSNR_gm(gui_data.i),2))];
-    gui_data.txt_tsnr_wm.String = ['tSNR (WM):  ' num2str(round(gui_data.tSNR_wm(gui_data.i),2))];
-    gui_data.txt_tsnr_csf.String = ['tSNR (CSF):  ' num2str(round(gui_data.tSNR_csf(gui_data.i),2))];
+    if gui_data.sample_set == 1
+        gui_data.txt_tsnr_wm.String = ['tSNR (ROI1):  ' num2str(round(gui_data.tSNR_ROI{1}(gui_data.i),2))];
+        gui_data.txt_tsnr_csf.String = ['tSNR (ROI2):  ' num2str(round(gui_data.tSNR_ROI{2}(gui_data.i),2))];
+    else
+        gui_data.txt_tsnr_wm.String = ['tSNR (WM):  ' num2str(round(gui_data.tSNR_wm(gui_data.i),2))];
+        gui_data.txt_tsnr_csf.String = ['tSNR (CSF):  ' num2str(round(gui_data.tSNR_csf(gui_data.i),2))];
+    end
     
     t7_start = clock;
     
@@ -951,6 +1053,7 @@ hold(gui_data.ax_FD,'on');
 clear gui_data.line_outliers;
 gui_data.line_outliers = line(gui_data.ax_FD, [gui_data.FD_outliers; gui_data.FD_outliers], [gui_data.ax_FD.YLim(2)*ones(1, numel(gui_data.FD_outliers)); zeros(1, numel(gui_data.FD_outliers))],  'Color', 'y', 'LineWidth', 1.5 );
 hold(gui_data.ax_FD,'off');
+drawnow;
 % assignin('base', 'gui_data', gui_data)
 % guidata(fig, gui_data);
 end
@@ -958,6 +1061,10 @@ end
 function drawtSNR(fig)
 gui_data = guidata(fig);
 set(gui_data.plot_tSNR, 'YData', gui_data.tSNR);
+if gui_data.sample_set == 1
+    set(gui_data.plot_tSNR_ROI{1}, 'YData', gui_data.tSNR_ROI{1});
+    set(gui_data.plot_tSNR_ROI{2}, 'YData', gui_data.tSNR_ROI{2});
+end
 drawnow;
 % assignin('base', 'gui_data', gui_data)
 % guidata(fig, gui_data);
@@ -967,6 +1074,10 @@ end
 function drawZscore(fig)
 gui_data = guidata(fig);
 set(gui_data.plot_globalZ, 'YData', gui_data.F_zscore_mean);
+if gui_data.sample_set == 1
+    set(gui_data.plot_zscore_ROI{1}, 'YData', gui_data.zscore_ROI{1});
+    set(gui_data.plot_zscore_ROI{2}, 'YData', gui_data.zscore_ROI{2});
+end
 drawnow;
 % assignin('base', 'gui_data', gui_data)
 % guidata(fig, gui_data);
@@ -979,6 +1090,7 @@ WM_img = gui_data.F_theplot(gui_data.I_WM, :);
 CSF_img = gui_data.F_theplot(gui_data.I_CSF, :);
 all_img = [GM_img; WM_img; CSF_img];
 set(gui_data.img_thePlot, 'CData', all_img);
+offline_qc.intensity_scale = [-6 6];
 gui_data.ax_thePlot.Title.String = gui_data.ax_thePlot_title;
 gui_data.ax_thePlot.YLabel.String = 'voxels';
 gui_data.ax_thePlot.XLabel.String = 'Volume #';
@@ -1124,6 +1236,10 @@ if ~exist(gui_data.qc_out_dir, 'dir')
 end
 cd(gui_data.qc_out_dir)
 
+mmessage = 'Please wait while rtQC runs offline processing and quality assessment on all data. This may take a few minutes. When completed, the figures below will display QC information.';
+mtitle = 'Running Offline QA';
+msgbox(mmessage,mtitle);
+
 % Gaussian kernel smoothing of unprocessed data
 gui_data.fwhm = 6;
 [d, f, e] = fileparts(gui_data.functional4D_fn);
@@ -1133,6 +1249,7 @@ if ~exist(gui_data.sfunctional4D_fn, 'file')
 end
 % Detrend 4D time series (smoothed and unsmoothed)
 output = rtQC_detrend4D(gui_data.functional4D_fn);
+offline_qc.detrend_output = output;
 offline_qc.F4D_detrended = output.F4D_detrended;
 offline_qc.F2D_detrended = output.F_2D_detrended;
 % Statistical measures
@@ -1149,6 +1266,7 @@ offline_qc.F2D_psc(isnan(offline_qc.F2D_psc))=0;
 gui_data.FD_radius = 50; % in mm
 offline_qc.FD_measures = rtQC_calculateFD(gui_data.MP, gui_data.FD_radius, gui_data.FD_threshold);
 % DVARS
+assignin('base', 'offline_qc', offline_qc)
 offline_qc.F2D_diff = [zeros(1, gui_data.Ni*gui_data.Nj*gui_data.Nk); diff(offline_qc.F2D_detrended')]';
 offline_qc.DVARS = var(offline_qc.F2D_diff);
 % GCOR
@@ -1181,17 +1299,23 @@ fontsizeL = 14;
 fontsizeM = 11;
 
 ax1 = subplot(7,1,4:7);
-imagesc(ax1, offline_qc.all_img); colormap(gray); caxis(offline_qc.intensity_scale);
+imagesc(ax1, offline_qc.all_img); colormap(ax1, 'gray'); caxis(ax1, offline_qc.intensity_scale);
 title(ax1, 'The Plot','fontsize',fontsizeL)
 ylabel(ax1, 'Voxels','fontsize',fontsizeM)
 xlabel(ax1, 'fMRI volumes','fontsize',fontsizeM)
-hold on; line([1 gui_data.Nt],[line1_pos line1_pos],  'Color', 'b', 'LineWidth', 2 )
-line([1 gui_data.Nt],[line2_pos line2_pos],  'Color', 'r', 'LineWidth', 2 )
-hold off;
-imagesc(gui_data.ax_thePlot_offline, offline_qc.all_img); colormap(gray); caxis(offline_qc.intensity_scale);
-hold on; line([1 gui_data.Nt],[line1_pos line1_pos],  'Color', 'b', 'LineWidth', 2 )
-line([1 gui_data.Nt],[line2_pos line2_pos],  'Color', 'r', 'LineWidth', 2 )
-hold off;
+
+hold(ax1, 'on');
+line(ax1, [1 gui_data.Nt],[line1_pos line1_pos],  'Color', 'b', 'LineWidth', 2 )
+line(ax1, [1 gui_data.Nt],[line2_pos line2_pos],  'Color', 'r', 'LineWidth', 2 )
+hold(ax1, 'off');
+imagesc(gui_data.ax_thePlot_offline, offline_qc.all_img); colormap(gui_data.ax_thePlot_offline, 'gray'); caxis(gui_data.ax_thePlot_offline, offline_qc.intensity_scale);
+hold(gui_data.ax_thePlot_offline, 'on');
+line(gui_data.ax_thePlot_offline, [1 gui_data.Nt],[line1_pos line1_pos],  'Color', 'b', 'LineWidth', 2 )
+line(gui_data.ax_thePlot_offline, [1 gui_data.Nt],[line2_pos line2_pos],  'Color', 'r', 'LineWidth', 2 )
+hold(gui_data.ax_thePlot_offline, 'off');
+gui_data.ax_thePlot_offline.Title.String = gui_data.ax_thePlot_title;
+gui_data.ax_thePlot_offline.YLabel.String = 'voxels';
+gui_data.ax_thePlot_offline.XLabel.String = 'Volume #';
 
 ax2 = subplot(7,1,1);
 plot(ax2, offline_qc.FD_measures.FD, 'LineWidth', 2); grid;
@@ -1199,20 +1323,33 @@ set(ax2,'Xticklabel',[]);
 title(ax2, 'FD','fontsize',fontsizeL)
 ylabel(ax2, 'mm','fontsize',fontsizeM)
 plot(gui_data.ax_FD_offline, offline_qc.FD_measures.FD, 'LineWidth', 2);
+gui_data.ax_FD_offline.Title.String = gui_data.ax_FD_title;
+gui_data.ax_FD_offline.YLabel.String = 'mm';
+removeAxesXTickLabels(gui_data.ax_FD_offline);
+grid(gui_data.ax_FD_offline);
 
 ax3 = subplot(7,1,2);
-plot(ax3, offline_qc.DVARS, 'LineWidth', 2); grid;
+plot(ax3, offline_qc.DVARS, 'LineWidth', 2); grid(ax3);
 set(ax3,'Xticklabel',[]);
 title(ax3, 'DVARS','fontsize',fontsizeL)
 ylabel(ax3, 'a.u.','fontsize',fontsizeM)
 plot(gui_data.ax_DVARS_offline, offline_qc.DVARS, 'LineWidth', 2);
+gui_data.ax_DVARS_offline.Title.String = gui_data.ax_DVARS_title;
+gui_data.ax_DVARS_offline.YLabel.String = 'a.u.';
+removeAxesXTickLabels(gui_data.ax_DVARS_offline);
+grid(gui_data.ax_DVARS_offline);
 
 ax4 = subplot(7,1,3);
-plot(ax4, offline_qc.F2D_zstat_mean, 'LineWidth', 2); grid;
+plot(ax4, offline_qc.F2D_zstat_mean, 'LineWidth', 2); grid(ax4);
 set(ax4,'Xticklabel',[]);
 title(ax4, 'Z-score','fontsize',fontsizeL)
 ylabel(ax4, 'a.u.','fontsize',fontsizeM)
 plot(gui_data.ax_globalZ_offline, offline_qc.F2D_zstat_mean, 'LineWidth', 2);
+gui_data.ax_globalZ_offline.Title.String = gui_data.ax_globalZ_title;
+gui_data.ax_globalZ_offline.YLabel.String = 'a.u.';
+removeAxesXTickLabels(gui_data.ax_globalZ_offline);
+grid(gui_data.ax_globalZ_offline);
+
 print(tf, 'timeseries_summary', '-dpng')
 close(tf)
 
@@ -1229,19 +1366,40 @@ offline_qc.tSNR_3D_masked = reshape(offline_qc.tSNR_2D_masked, gui_data.Ni, gui_
 montage2 = rtQC_createMontage(offline_qc.F3D_mean, 5, 1, 'Mean EPI (whole image)', 'gray', 'off');
 print(montage2.f, 'mean_epi', '-dpng')
 im1 = imagesc(gui_data.ax_epimean_offline, montage2.image); colormap(gui_data.ax_epimean_offline, 'gray');
+removeAxesTicks(gui_data.ax_epimean_offline);
+colorbar(gui_data.ax_epimean_offline);
 
 montage3 = rtQC_createMontage(offline_qc.F3D_stddev, 5, 1, 'Standard deviation (whole image)', 'parula', 'off');
 print(montage3.f, 'stddev_epi', '-dpng')
 im2 = imagesc(gui_data.ax_epistddev_offline, montage3.image); colormap(gui_data.ax_epistddev_offline, 'parula');
+removeAxesTicks(gui_data.ax_epistddev_offline);
+colorbar(gui_data.ax_epistddev_offline);
 
 montage1 = rtQC_createMontage(offline_qc.tSNR_3D, 5, 1, 'tSNR (whole image)', 'hot', 'off');
 print(montage1.f, 'tsnr_whole', '-dpng')
 im3 = imagesc(gui_data.ax_tsnrwhole_offline, montage1.image); colormap(gui_data.ax_tsnrwhole_offline, 'hot');
+removeAxesTicks(gui_data.ax_tsnrwhole_offline);
+colorbar(gui_data.ax_tsnrwhole_offline);
 
 montage4 = rtQC_createMontage(offline_qc.tSNR_3D_masked, 5, 1, 'tSNR (brain)', 'hot', 'off');
 print(montage4.f, 'tsnr_brain', '-dpng')
 im4 = imagesc(gui_data.ax_tsnrbrain_offline, montage4.image); colormap(gui_data.ax_tsnrbrain_offline, 'hot');
+removeAxesTicks(gui_data.ax_tsnrbrain_offline);
+colorbar(gui_data.ax_tsnrbrain_offline);
 
+im5 = imagesc(gui_data.ax_registration_offline, montage2.image); colormap(gui_data.ax_registration_offline, 'gray');
+removeAxesTicks(gui_data.ax_registration_offline);
+colorbar(gui_data.ax_registration_offline);
+hold(gui_data.ax_registration_offline, 'on');
+montage_mask = rtQC_createMontage(offline_qc.mask_3D, 5, 1, 'Mask image', 'gray', 'off');
+bin_mask_img = false(size(montage_mask.image));
+bin_mask_img(montage_mask.image>0) = true;
+bound_whole_bin = bwboundaries(bin_mask_img);
+Nblobs_bin = numel(bound_whole_bin);
+for b = 1:Nblobs_bin
+    p5 = plot(gui_data.ax_registration_offline, bound_whole_bin{b,1}(:,2), bound_whole_bin{b,1}(:,1), 'r', 'LineWidth', 1);
+end
+hold(gui_data.ax_registration_offline, 'off');
 figmask = rtQC_displayMaskContour(offline_qc.F3D_mean, offline_qc.mask_3D, 0, 3, 'off');
 print(figmask, 'mask_contour', '-dpng')
 % im5 = imagesc(gui_data.ax_registration_offline, figmask);
@@ -1250,7 +1408,7 @@ print(figmask, 'mask_contour', '-dpng')
 
 gui_data.offline_qc = offline_qc;
 
-% assignin('base', 'gui_data', gui_data)
+assignin('base', 'gui_data', gui_data)
 guidata(fig, gui_data);
 
 end
@@ -1258,7 +1416,7 @@ end
 function generateReport(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
-
+offline_qc = gui_data.offline_qc;
 % Create HTML log file
 gui_data.subject_id = 'subj1';
 dt = datetime('now');

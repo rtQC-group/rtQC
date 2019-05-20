@@ -20,11 +20,12 @@ function montage = rtQC_createMontage(img, columns, rotate, str, clrmp, visibili
 
 montage = struct;
 [Ni, Nj, Nk] = size(img);
+
+
 % Rotate image slices if required
 if rotate
     for p = 1:Nk
         img(:,:,p) = rot90(img(:,:,p));
-%         mask_img(:,:,p) = rot90(mask_img(:,:,p));
     end
 end
 
@@ -76,9 +77,10 @@ else
 end
 
 % Create figure
-f = figure('visible', visibility) ;imagesc(montage.image); colormap(clrmp); colorbar;
+f = figure('visible', visibility); im = imagesc(montage.image); colormap(clrmp); colorbar;
 title(str);
 montage.f = f;
+montage.im = im;
 
 
 

@@ -76,34 +76,34 @@ end
 
 
 
-%% stephan test scripts
-
-fn1 = '/Users/jheunis/Desktop/sample-data/sub-opennft/rstructScan_PSC.nii';
-fn2 = '/Users/jheunis/Desktop/sample-data/sub-opennft/template_func.nii';
-slice_nr = 20;
-im1 = spm_read_vols(spm_vol(fn1));
-im2 = spm_read_vols(spm_vol(fn2));
-% im1 = uint16(im1*1000);
-% im2 = uint16(im2*1000);
-
-slice_im1 = squeeze(im1(:,:, slice_nr));
-slice_im2 = squeeze(im2(:,:, slice_nr));
-[M, out] = MI_GG(slice_im1, slice_im2);
+% %% stephan test scripts
 % 
-% nifti_img_1 = load_untouch_nii(fn1);
-% nifti_img_2 = load_untouch_nii(fn2);
-% % img_1=uint16(nifti_img_1.img*1000);
-% % img_2=uint16(nifti_img_2.img*1000);
-% img_1=nifti_img_1.img*1000;
-% img_2=nifti_img_2.img*1000;
-% slice_img_1 = squeeze(img_1(:,:,slice_nr));
-% slice_img_2 = squeeze(img_2(:,:,slice_nr));
+% fn1 = '/Users/jheunis/Desktop/sample-data/sub-opennft/rstructScan_PSC.nii';
+% fn2 = '/Users/jheunis/Desktop/sample-data/sub-opennft/template_func.nii';
+% slice_nr = 20;
+% im1 = spm_read_vols(spm_vol(fn1));
+% im2 = spm_read_vols(spm_vol(fn2));
+% % im1 = uint16(im1*1000);
+% % im2 = uint16(im2*1000);
 % 
-% figure;
-% subplot(2,2,1); imagesc(slice_im1)
-% subplot(2,2,2); imagesc(slice_im2)
-% subplot(2,2,3); imagesc(slice_img_1)
-% subplot(2,2,4); imagesc(slice_img_2)
+% slice_im1 = squeeze(im1(:,:, slice_nr));
+% slice_im2 = squeeze(im2(:,:, slice_nr));
+% [M, out] = MI_GG(slice_im1, slice_im2);
+% % 
+% % nifti_img_1 = load_untouch_nii(fn1);
+% % nifti_img_2 = load_untouch_nii(fn2);
+% % % img_1=uint16(nifti_img_1.img*1000);
+% % % img_2=uint16(nifti_img_2.img*1000);
+% % img_1=nifti_img_1.img*1000;
+% % img_2=nifti_img_2.img*1000;
+% % slice_img_1 = squeeze(img_1(:,:,slice_nr));
+% % slice_img_2 = squeeze(img_2(:,:,slice_nr));
+% % 
+% % figure;
+% % subplot(2,2,1); imagesc(slice_im1)
+% % subplot(2,2,2); imagesc(slice_im2)
+% % subplot(2,2,3); imagesc(slice_img_1)
+% % subplot(2,2,4); imagesc(slice_img_2)
 
 
 

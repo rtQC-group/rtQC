@@ -61,7 +61,8 @@ Any conributions are much appreciated! Contributions can be in the form of submi
 If you use rtQC in your work, please cite the following:
 
 ```
-``
+...
+```
 
 ## License
 

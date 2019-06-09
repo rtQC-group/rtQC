@@ -61,8 +61,10 @@ Any conributions are much appreciated! Contributions can be in the form of submi
 If you use rtQC in your work, please cite the following:
 
 ```
-...
+Heunis, S., Hellrung, L., Meer, V.D., Bergert, S., Sladky, R., Pamplona, G.S.P., Scharnowski, F., Koush, Y., Mehler, D., Falcon, C., Gispert, J.D., Molinuevo, J.L., Skouras, S., 2019. rtQC: an open-source toolbox for real-time fMRI quality control. Proceedings of the 25th annual meeting of the Organization for Human Brain Mapping, Rome, Italy. https://doi.org/10.5281/zenodo.3239084
 ```
+
+Link to poster: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3239084.svg)](https://doi.org/10.5281/zenodo.3239084)
 
 ## License
 

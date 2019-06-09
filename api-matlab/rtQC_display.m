@@ -47,29 +47,14 @@ for i=1:numel(fields)
     gui_data.(fields{i}) = defaults.(fields{i});
 end
 % Populate data if required
-if ~gui_data.start_clean
-    if gui_data.sample_set == 1
-        gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-opennft';
-        gui_data.structural_fn = [gui_data.data_dir filesep 'structScan_PSC.nii'];
-        gui_data.functional4D_fn = [gui_data.data_dir filesep 'fanon-0007-00001-000001-01.nii'];
-        gui_data.ROI1_fn = [gui_data.data_dir filesep 'lROI_1.nii'];
-        gui_data.ROI2_fn = [gui_data.data_dir filesep 'rROI_2.nii'];
-    else
-        gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-hcp';
-        gui_data.structural_fn = [gui_data.data_dir filesep 'mprage.nii'];
-        gui_data.functional4D_fn = [gui_data.data_dir filesep 'rest.nii'];
-        gui_data.ROI1_fn = '';
-        gui_data.ROI2_fn = '';
-    end
-    gui_data.im1_dqchecks_fn = '';
-    gui_data.im2_dqchecks_fn = '';
+if gui_data.demo_mode
+    data_set = defaults.sample_set{defaults.use_sample_set};
 else
-    gui_data.structural_fn = '';
-    gui_data.functional4D_fn = '';
-    gui_data.ROI1_fn = '';
-    gui_data.ROI2_fn = '';
-    gui_data.im1_dqchecks_fn = '';
-    gui_data.im2_dqchecks_fn = '';
+    data_set = defaults.empty_set;
+end
+dfields = fieldnames(data_set);
+for i=1:numel(dfields)
+    gui_data.(dfields{i}) = data_set.(dfields{i});
 end
 
 % Setup all UIcontrols and GUI components
@@ -78,6 +63,7 @@ rtQC_display_setup;
 gui_data.tgroup.SelectionChangedFcn = @tabChangedCallback;
 gui_data.pb_help.Callback = @linkToGithub;
 gui_data.pb_docs.Callback = @linkToDocs;
+gui_data.pb_mode.Callback = @changeMode;
 gui_data.pb_start.Callback = @gotoTab1;
 gui_data.edit_fd_threshold_defaults.Callback = @editFDthreshold;
 gui_data.edit_spm_defaults.Callback = @editSPMdir;
@@ -189,6 +175,20 @@ end
 
 function linkToDocs(hObject,eventdata)
 f = msgbox('Documentation coming soon!');
+end
+
+function changeMode(hObject,eventdata)
+fig = ancestor(hObject,'figure');
+gui_data = guidata(fig);
+if gui_data.demo_mode == 1
+    gui_data.demo_mode = 0;
+    gui_data.mode_string = 'Standard Mode';
+else
+    gui_data.demo_mode = 1;
+    gui_data.mode_string = 'Demo Mode';
+end
+gui_data.pb_mode.String = gui_data.mode_string;
+guidata(fig,gui_data)
 end
 
 function gotoTab1(hObject,eventdata)
@@ -306,17 +306,16 @@ end
 function selectData1(hObject,eventdata)
 fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
-
 gui_data.pb_selectData1.String = ['Task ' char(hex2dec('2713'))];
 gui_data.pb_selectData2.String = 'Rest';
-gui_data.sample_set = 1;
-gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-opennft';
+gui_data.use_sample_set = 1;
+data_set = gui_data.sample_set{gui_data.use_sample_set};
+dfields = fieldnames(data_set);
+for i=1:numel(dfields)
+    gui_data.(dfields{i}) = data_set.(dfields{i});
+end
 gui_data.qc_out_dir = [gui_data.data_dir filesep 'rtQC_output'];
 gui_data.edit_outdir_defaults.String = gui_data.qc_out_dir ;
-gui_data.structural_fn = [gui_data.data_dir filesep 'structScan_PSC.nii'];
-gui_data.functional4D_fn = [gui_data.data_dir filesep 'fanon-0007-00001-000001-01.nii'];
-gui_data.ROI1_fn = [gui_data.data_dir filesep 'lROI_1.nii'];
-gui_data.ROI2_fn = [gui_data.data_dir filesep 'rROI_2.nii'];
 gui_data.edit_structural.String = gui_data.structural_fn;
 gui_data.edit_structural_pre.String = gui_data.structural_fn;
 gui_data.edit_functional.String = gui_data.functional4D_fn;
@@ -340,14 +339,14 @@ fig = ancestor(hObject,'figure');
 gui_data = guidata(fig);
 gui_data.pb_selectData1.String = 'Task';
 gui_data.pb_selectData2.String = ['Rest ' char(hex2dec('2713'))];
-gui_data.sample_set = 2;
-gui_data.data_dir = '/Users/jheunis/Desktop/sample-data/sub-hcp';
+gui_data.use_sample_set = 2;
+data_set = gui_data.sample_set{gui_data.use_sample_set};
+dfields = fieldnames(data_set);
+for i=1:numel(dfields)
+    gui_data.(dfields{i}) = data_set.(dfields{i});
+end
 gui_data.qc_out_dir = [gui_data.data_dir filesep 'rtQC_output'];
 gui_data.edit_outdir_defaults.String = gui_data.qc_out_dir ;
-gui_data.structural_fn = [gui_data.data_dir filesep 'mprage.nii'];
-gui_data.functional4D_fn = [gui_data.data_dir filesep 'rest.nii'];
-gui_data.ROI1_fn = '';
-gui_data.ROI2_fn = '';
 gui_data.edit_structural.String = gui_data.structural_fn;
 gui_data.edit_structural_pre.String = gui_data.structural_fn;
 gui_data.edit_functional.String = gui_data.functional4D_fn;
@@ -569,8 +568,8 @@ if img_size(1) > 1
 else
     % if 3D image was entered
     gui_data.functional0_fn = gui_data.functional4D_fn;
-    % for opennft data specifically
-    if gui_data.sample_set == 1
+    % for opennft sample data specifically
+    if gui_data.use_sample_set == 1
         gui_data.functional4D_fn = [gui_data.data_dir filesep 'fanon-0007.nii'];
         if ~exist(gui_data.functional4D_fn, 'file')
             vols = cell(gui_data.Nt_default,1);
@@ -688,7 +687,7 @@ gui_data.ax_globalZ.YLabel.String = 'a.u.';
 removeAxesXTickLabels(gui_data.ax_globalZ)
 hold(gui_data.ax_tSNR, 'on')
 hold(gui_data.ax_globalZ, 'on')
-if gui_data.sample_set == 1
+if gui_data.use_sample_set == 1
     % hardcoding Nroi = 2, for the case of example Opennft sample data. To be
     % changed.
     
@@ -753,7 +752,7 @@ gui_data.RT_status = 'initialized';
 [gui_data.pb_initialize.Enable, gui_data.pb_startRT.Enable, gui_data.pb_stopRT.Enable] = rtControlsDisplay(gui_data.RT_status);
 assignin('base', 'gui_data', gui_data)
 guidata(fig,gui_data);
-msgbox('Initialized for real-time operation');
+% msgbox('Initialized for real-time operation');
 end
 
 
@@ -781,12 +780,13 @@ while gui_data.i < (gui_data.Nt+1)
     t0_start = clock;
     txt_dyn.String = ['#' num2str(gui_data.i)];
     % 0: Load dynamic functional image
-    if gui_data.sample_set == 1
+    if gui_data.use_sample_set == 1
         fdyn_fn = [d filesep 'fanon-0007-' sprintf('%05d',gui_data.i) '-' sprintf('%06d',gui_data.i) '-01' e]; % filename of dynamic functional image
-    elseif gui_data.sample_set == 2
+    elseif gui_data.use_sample_set == 2
         fdyn_fn = [d filesep f '_' sprintf('%05d',gui_data.i) e]; % filename of dynamic functional image
     else
-        % Insert custom dynamic filename here
+        % Insert custom dynamic filename here, either for custom sample
+        % data set or for new offline or real-time data
     end
     
     currentVol = spm_vol(fdyn_fn);
@@ -931,7 +931,7 @@ while gui_data.i < (gui_data.Nt+1)
     gui_data.F_zscore(isnan(gui_data.F_zscore(gui_data.I_mask, gui_data.i)), gui_data.i) = 0;
     gui_data.F_zscore_mean(1, gui_data.i) = mean(gui_data.F_zscore(gui_data.I_mask, gui_data.i));
     
-    if gui_data.sample_set == 1
+    if gui_data.use_sample_set == 1
         gui_data.zscore_ROI{1}(1, gui_data.i) = mean(gui_data.F_zscore(gui_data.I_ROI{1}, gui_data.i));
         gui_data.zscore_ROI{2}(1, gui_data.i) = mean(gui_data.F_zscore(gui_data.I_ROI{2}, gui_data.i));
         gui_data.tSNR_ROI{1}(gui_data.i) = mean(gui_data.F_tSNR(gui_data.I_ROI{1}, gui_data.i));
@@ -946,7 +946,7 @@ while gui_data.i < (gui_data.Nt+1)
     gui_data.txt_fdave.String = ['Mean FD:  ' num2str(round(gui_data.FD_dynamic_average,2))];
     gui_data.txt_tsnr.String = ['tSNR (brain):  ' num2str(round(gui_data.tSNR(gui_data.i),2))];
     gui_data.txt_tsnr_gm.String = ['tSNR (GM):  ' num2str(round(gui_data.tSNR_gm(gui_data.i),2))];
-    if gui_data.sample_set == 1
+    if gui_data.use_sample_set == 1
         gui_data.txt_tsnr_wm.String = ['tSNR (ROI1):  ' num2str(round(gui_data.tSNR_ROI{1}(gui_data.i),2))];
         gui_data.txt_tsnr_csf.String = ['tSNR (ROI2):  ' num2str(round(gui_data.tSNR_ROI{2}(gui_data.i),2))];
     else
@@ -1061,7 +1061,7 @@ end
 function drawtSNR(fig)
 gui_data = guidata(fig);
 set(gui_data.plot_tSNR, 'YData', gui_data.tSNR);
-if gui_data.sample_set == 1
+if gui_data.use_sample_set == 1
     set(gui_data.plot_tSNR_ROI{1}, 'YData', gui_data.tSNR_ROI{1});
     set(gui_data.plot_tSNR_ROI{2}, 'YData', gui_data.tSNR_ROI{2});
 end
@@ -1074,7 +1074,7 @@ end
 function drawZscore(fig)
 gui_data = guidata(fig);
 set(gui_data.plot_globalZ, 'YData', gui_data.F_zscore_mean);
-if gui_data.sample_set == 1
+if gui_data.use_sample_set == 1
     set(gui_data.plot_zscore_ROI{1}, 'YData', gui_data.zscore_ROI{1});
     set(gui_data.plot_zscore_ROI{2}, 'YData', gui_data.zscore_ROI{2});
 end
